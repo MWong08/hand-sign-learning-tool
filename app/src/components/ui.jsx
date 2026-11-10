@@ -73,3 +73,5 @@ export function PhraseVideo({ signs, labels }) {
 }
 
 export const VERDICT_TEXT = { correct: "Correct!", close: "Almost there", incorrect: "Not quite", unclear: "Couldn't see clearly" };
+// how a phrase sign followed the one before (phraseTracker.js)
+export const JOINED_TEXT = { flowing: "🌊 smooth join", paused: "⏸ paused before", lowered: "⬇ hand dropped before" };

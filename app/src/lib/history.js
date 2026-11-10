@@ -1,7 +1,8 @@
 // Practice-history summaries and CSV export (for the learner's progress page, and for analysing
 // UAT sessions: export a participant's attempts after their session).
 
-const CSV_COLUMNS = ["timestamp", "date", "mode", "sign", "phrase", "verdict", "closeness", "issues", "framing"];
+// joined (phrase signs only): how the sign followed the one before - flowing, paused or lowered
+const CSV_COLUMNS = ["timestamp", "date", "mode", "sign", "phrase", "joined", "verdict", "closeness", "issues", "framing"];
 
 // RFC 4180 quoting: wrap in quotes if the value has a comma, quote or newline; double inner quotes
 export function csvCell(value) {
@@ -16,6 +17,7 @@ export function attemptsToCsv(attempts) {
     a.mode,
     a.signId,
     a.phrase ?? "",
+    a.joined ?? "",
     a.verdict,
     a.closeness === undefined ? "" : Math.round(a.closeness * 10) / 10,
     (a.issues ?? []).map((i) => `${i.component}:${i.hint}`).join("; "),

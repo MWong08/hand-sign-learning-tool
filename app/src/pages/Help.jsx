@@ -27,8 +27,13 @@ export default function Help() {
 
       <h3>3. Phrases and free signing</h3>
       <p>
-        Sign one sign at a time. Between signs, <strong>hold your hand still for about half a second</strong>, or lower it.
-        Signs run together without a pause can't be separated yet.
+        Sign the whole phrase in one go, <strong>moving straight from one sign to the next</strong>, the way fluent
+        signers do. The app follows along and marks each sign as you make it. If you'd rather go slowly, hold your hand
+        still until the ring around 👀 fills (under a second), or lower it, between signs.
+      </p>
+      <p>
+        After a phrase you also get feedback on its <strong>flow</strong>: whether you joined the signs smoothly or
+        stopped between them.
       </p>
 
       <h3>4. Quiz</h3>

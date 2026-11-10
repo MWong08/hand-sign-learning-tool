@@ -10,7 +10,7 @@ export default function PhraseList({ vocab, progress }) {
     <section>
       <h1>Phrases</h1>
       <p className="muted">
-        Put signs together. Pause briefly between signs, or switch to <strong>fluent mode</strong> and sign straight through.
+        Put signs together. Sign the whole phrase in one go, moving straight from one sign to the next.
       </p>
       <ul className="phrase-list">
         {vocab.phrases.map((p, i) => {

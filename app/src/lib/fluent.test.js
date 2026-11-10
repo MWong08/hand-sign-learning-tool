@@ -41,4 +41,25 @@ describe("fluent decoder", () => {
     expect(event.sign).toBe("mom");
     expect(event.frames.length).toBeGreaterThanOrEqual(Math.min(...FLUENT.lengths));
   });
+
+  it("spots the expected sign with a lower bar than free recognition", () => {
+    const dec = createFluentDecoder(640, 480, classify(0.6), LABELS);
+    expect(repeat("mom", 30).map((t) => dec.push(fr(t))).filter(Boolean)).toEqual([]); // 0.6 < 0.9
+    dec.setTarget("mom");
+    const found = repeat("mom", 30).map((t) => dec.push(fr(t))).filter(Boolean);
+    expect(found.map((e) => [e.sign, e.reason])).toEqual([["mom", "spotted"]]);
+  });
+
+  it("does not spot a different sign than the expected one", () => {
+    const dec = createFluentDecoder(640, 480, classify(0.6), LABELS);
+    dec.setTarget("dad");
+    expect(repeat("mom", 30).map((t) => dec.push(fr(t))).filter(Boolean)).toEqual([]);
+  });
+
+  it("cut() forgets the frames so far and won't repeat the sign just found elsewhere", () => {
+    const dec = createFluentDecoder(640, 480, classify(0.95), LABELS);
+    repeat("hello", 6).forEach((t) => dec.push(fr(t)));
+    dec.cut("hello");
+    expect(repeat("hello", 30).map((t) => dec.push(fr(t))).filter(Boolean)).toEqual([]);
+  });
 });

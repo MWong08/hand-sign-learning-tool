@@ -6,6 +6,13 @@
 import * as tf from "@tensorflow/tfjs";
 import { asset } from "./assets.js";
 
+// Sliding-window calls (fluent.js) classify 1-4 windows at a time. On WebGL, TF.js compiles new
+// GPU programs for every new input shape, which for this model froze the page for ~2.5 s the first
+// time each batch size appeared, long enough to miss a whole sign mid-phrase (found 2026-11-11
+// with the browser phrase test). So batches are always padded to BATCH and both shapes used
+// (1 and BATCH) are compiled during loading.
+export const BATCH = 4;
+
 export async function createClassifier(modelName = "transformer_crop") {
   // WebGL runs on the GPU in the browser; fall back to the plain CPU backend if unavailable
   if (!(await tf.setBackend("webgl"))) await tf.setBackend("cpu");
@@ -15,7 +22,8 @@ export async function createClassifier(modelName = "transformer_crop") {
     tf.loadGraphModel(asset(`models/${modelName}/model.json`)),
     fetch(asset("models/labels.json")).then((r) => r.json()),
   ]);
-  tf.tidy(() => model.predict(tf.zeros([1, ...model.inputs[0].shape.slice(1)]))); // warm-up
+  // warm-up: compile both input shapes now, while the loading screen is showing
+  for (const n of [1, BATCH]) tf.tidy(() => model.predict(tf.zeros([n, ...model.inputs[0].shape.slice(1)])).dataSync());
 
   return {
     labels,
@@ -25,9 +33,12 @@ export async function createClassifier(modelName = "transformer_crop") {
       const probs = tf.tidy(() => model.predict(tf.tensor3d([features])).dataSync());
       return labels.map((sign, i) => ({ sign, prob: probs[i] })).sort((a, b) => b.prob - a.prob);
     },
-    // several sequences in one model call (fluent mode); returns one probability array per sequence
+    // several sequences (up to BATCH) in one model call (fluent.js); returns one probability
+    // array per sequence. Padded to BATCH with copies of the last one: one shape, no recompiling.
     predictBatch(featuresList) {
-      const flat = tf.tidy(() => model.predict(tf.tensor3d(featuresList)).dataSync());
+      const padded = [...featuresList];
+      while (padded.length % BATCH !== 0) padded.push(featuresList.at(-1));
+      const flat = tf.tidy(() => model.predict(tf.tensor3d(padded)).dataSync());
       return featuresList.map((_, i) => flat.subarray(i * labels.length, (i + 1) * labels.length));
     },
   };

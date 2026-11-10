@@ -14,7 +14,7 @@ export function normaliseParticipantId(text) {
 }
 
 export const SESSION_COLUMNS = ["participant", "timestamp", "time", "seconds_from_start", "event", "page",
-  "mode", "sign", "phrase", "verdict", "closeness", "issues", "framing"];
+  "mode", "sign", "phrase", "joined", "verdict", "closeness", "issues", "framing"];
 
 // One CSV with the session's screen visits and attempts in time order.
 // session: { participantId, startedAt }
@@ -35,6 +35,7 @@ export function sessionToCsv(session, attempts, events) {
     r.mode ?? "",
     r.signId ?? "",
     r.phrase ?? "",
+    r.joined ?? "",
     r.verdict ?? "",
     r.closeness === undefined ? "" : Math.round(r.closeness * 10) / 10,
     (r.issues ?? []).map((i) => `${i.component}:${i.hint}`).join("; "),

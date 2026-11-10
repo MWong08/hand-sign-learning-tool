@@ -135,7 +135,6 @@ h3 { font-weight: 800; }
   background: var(--sunken); color: var(--muted); vertical-align: middle;
 }
 .badge.mastered { background: color-mix(in srgb, var(--gold) 22%, var(--surface)); color: var(--gold-dark); }
-.beta { font-size: 0.65rem; font-weight: 900; text-transform: uppercase; background: var(--xp); color: #fff; border-radius: 6px; padding: 1px 5px; margin-left: 4px; }
 
 .segmented { display: inline-flex; gap: 4px; padding: 4px; background: var(--sunken); border-radius: 14px; flex-wrap: wrap; }
 .segmented button { border: 0; background: none; padding: 8px 12px; border-radius: 10px; font-weight: 800; color: var(--muted); font-size: 0.9rem; }
@@ -273,6 +272,16 @@ button.unit-banner { width: 100%; text-align: left; }
 .coach.signing { background: color-mix(in srgb, var(--blue) 12%, var(--surface)); color: var(--blue); }
 .coach-icon { font-size: 1.6rem; }
 .coach.signing .coach-icon { animation: bob 0.9s ease-in-out infinite; }
+/* phrases: a ring around the icon fills while the hand is held still (--still: 0..1) */
+.still-ring { position: relative; display: inline-grid; place-items: center; width: 2.4rem; height: 2.4rem; flex: none; }
+.still-ring::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%; padding: 3px;
+  background: conic-gradient(var(--correct) calc(var(--still, 0) * 1turn), transparent 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  transition: background 0.1s linear;
+}
 
 /* result sheet: slides up from the bottom of the lesson */
 .sheet {
@@ -348,8 +357,7 @@ button.unit-banner { width: 100%; text-align: left; }
 .framing-ok { right: auto; padding: 4px 10px; font-size: 0.8rem; background: rgba(34, 163, 90, 0.9); color: #fff; }
 
 /* ================================================================ phrases */
-.mode-switch { display: grid; gap: 4px; justify-items: start; margin: 8px 0; }
-.mode-help { margin: 0; font-size: 0.88rem; }
+.phrase-how { margin: 6px 0 0; font-size: 0.9rem; }
 .phrase-list { list-style: none; padding: 0; display: grid; gap: 12px; }
 .phrase-card {
   display: flex; gap: 14px; align-items: center; padding: 14px 16px; border-radius: var(--radius); background: var(--surface);
@@ -378,6 +386,9 @@ button.unit-banner { width: 100%; text-align: left; }
 .phrase-chip.incorrect, .phrase-chip.unclear { border-color: var(--incorrect); background: var(--incorrect-bg); }
 .chip-label { font-weight: 900; }
 .chip-verdict, .chip-detail { font-size: 0.85rem; color: var(--muted); font-weight: 700; }
+.chip-joined { font-size: 0.75rem; font-weight: 800; color: var(--muted); }
+.chip-joined.flowing { color: var(--link); }
+.flow-summary { margin: 8px 0 0; font-size: 0.95rem; }
 
 /* free signing */
 .transcript-card h3 { margin-top: 0; }

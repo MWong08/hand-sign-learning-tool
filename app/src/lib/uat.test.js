@@ -36,7 +36,7 @@ describe("UAT session export", () => {
     const events_ = lines.slice(1).map((l) => l.split(",")[4]);
     expect(events_).toEqual(["session-start", "page", "attempt", "attempt", "attempt", "session-end"]);
     expect(lines[2]).toContain(",1,page,practice/0/0,");
-    expect(lines[3]).toBe(`P01,${T0 + 20_000},2026-11-16T02:00:20.000Z,20,attempt,,practice,hello,,incorrect,40,index:straighten,tooFar`);
+    expect(lines[3]).toBe(`P01,${T0 + 20_000},2026-11-16T02:00:20.000Z,20,attempt,,practice,hello,,,incorrect,40,index:straighten,tooFar`);
     expect(lines[4]).toContain(",35.5,attempt,");
     expect(lines.join("\n")).not.toContain("P02");
     expect(lines.join("\n")).not.toContain("mom");

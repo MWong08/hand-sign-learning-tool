@@ -8,6 +8,10 @@ different signs (same video size, so the frames share one coordinate frame). Two
            (+ END_GAP + 2 empty frames to guarantee the gap)
   paused   only each clip's active segment, joined by a still hold: the last hand frame
            repeated, i.e. the learner keeps the hand up and pauses between signs
+  held     as paused, but the hold carries REAL landmark jitter: the movement of a held hand
+           recorded through the app's browser pipeline (app/scripts/measure_held_jitter.mjs ->
+           data/processed/held_hands_browser.json), scaled to the clip's hand size. A frozen
+           frame never jitters, so "paused" overstated how well pauses work live (2026-11-11).
   continuous  only each clip's active segment, joined by a short movement (TRANSITION frames
            interpolated from the end of one sign to the start of the next): no pause and no
            lowering, as in fluent signing. An approximation: real signers also blend the end
@@ -29,10 +33,11 @@ import numpy as np
 import preprocess as P
 
 N_RANDOM = 120
-HOLD = 8          # pause length in frames (~0.5 s)
+HOLD = 12         # pause length in frames (~0.8 s: the app asks for a ~0.73 s hold, segmenter.js PAUSE_FRAMES)
 TRANSITION = 4    # frames to move from one sign to the next in the "continuous" style (~0.27 s)
 GAP = 10          # hand-less frames between signs in the "lowered" style
 SEED = 3
+HELD_FILE = P.OUT_DIR / "held_hands_browser.json"
 
 
 def to_frames(hands, pose):
@@ -55,6 +60,39 @@ def transition(h0, p0, h1, p1, n=TRANSITION):
     return hands.astype(np.float32), pose.astype(np.float32)
 
 
+def load_held_jitter(split):
+    """Each recorded held hand as its frame-by-frame offset from its own average, in hand sizes:
+    (T, 21, 2) arrays, pixels / hand size. Val phrases use the recordings the pause rule was
+    calibrated on, test phrases only the others (calibrate_pause.held_part)."""
+    from calibrate_pause import held_part
+    held = json.loads(HELD_FILE.read_text())
+    out = []
+    for recs in held.values():
+        for r in recs:
+            if (held_part(r["sign"]) == "calibration") != (split == "val"):
+                continue
+            slot = next((s for s in range(2) if all(f["hands"][s] for f in r["frames"])), None)
+            if slot is None:
+                continue
+            pts = np.array([f["hands"][slot] for f in r["frames"]])[:, :, :2] * [r["width"], r["height"]]
+            size = np.median(np.linalg.norm(pts[:, 9] - pts[:, 0], axis=-1))
+            out.append((pts - pts.mean(0)) / size)
+    return out
+
+
+def jittered_hold(h, p, n, jitter, rng, width, height):
+    """n frames holding hand frame h (2, 21, 3) still, with a real recorded jitter added."""
+    j = jitter[int(rng.integers(len(jitter)))]
+    start = int(rng.integers(len(j) - n + 1))
+    hands = np.repeat(h[None], n, axis=0).copy()
+    for s in range(2):
+        if np.isnan(h[s, 0, 0]):
+            continue
+        size = np.linalg.norm((h[s, 9, :2] - h[s, 0, :2]) * [width, height])
+        hands[:, s, :, :2] += j[start:start + n] * size / np.array([width, height])
+    return hands.astype(np.float32), np.repeat(p[None], n, axis=0)
+
+
 def empty_frames(n, pose_like):
     return [{"hands": [None, None], "pose": pose_like} for _ in range(n)]
 
@@ -64,6 +102,8 @@ def main():
     ap.add_argument("--split", default="test", choices=["val", "test"])
     split = ap.parse_args().split
     rng = np.random.default_rng(SEED)
+    jitter_rng = np.random.default_rng(SEED + 1)  # separate, so the phrases stay the same as before
+    jitter = load_held_jitter(split)
     vocab = json.loads(P.VOCAB_FILE.read_text(encoding="utf-8"))
     signs = [s["id"] for u in vocab["units"] for s in u["signs"]]
 
@@ -94,6 +134,7 @@ def main():
 
         lowered = empty_frames(3, pose_ref)
         paused = empty_frames(3, pose_ref)
+        held = empty_frames(3, pose_ref)
         cont_h, cont_p = [], []
         for h, p in chosen:
             lowered += to_frames(h, p) + empty_frames(GAP, pose_ref)
@@ -102,6 +143,8 @@ def main():
             last = max(i for i in range(len(hh)) if not np.isnan(hh[i, :, P.WRIST, 0]).all())
             hold_h, hold_p = np.repeat(hh[last:last + 1], HOLD, axis=0), np.repeat(pp[last:last + 1], HOLD, axis=0)
             paused += to_frames(np.concatenate([hh[:last + 1], hold_h]), np.concatenate([pp[:last + 1], hold_p]))
+            jh, jp = jittered_hold(hh[last], pp[last], HOLD, jitter, jitter_rng, g[1], g[2])
+            held += to_frames(np.concatenate([hh[:last + 1], jh]), np.concatenate([pp[:last + 1], jp]))
             seg_h, seg_p = hh[:last + 1], pp[:last + 1]
             if cont_h:
                 th, tp = transition(cont_h[-1][-1], cont_p[-1][-1], seg_h[0], seg_p[0])
@@ -110,10 +153,11 @@ def main():
             cont_h.append(seg_h)
             cont_p.append(seg_p)
         paused += empty_frames(GAP, pose_ref)
+        held += empty_frames(GAP, pose_ref)
         continuous = empty_frames(3, pose_ref) + to_frames(np.concatenate(cont_h), np.concatenate(cont_p))             + empty_frames(GAP, pose_ref)
 
         cases.append({"signs": list(seq), "signer": g[0], "width": g[1], "height": g[2],
-                      "lowered": lowered, "paused": paused, "continuous": continuous})
+                      "lowered": lowered, "paused": paused, "held": held, "continuous": continuous})
 
     out = P.OUT_DIR / ("phrase_eval.json" if split == "test" else f"phrase_eval_{split}.json")
     out.write_text(json.dumps(cases))

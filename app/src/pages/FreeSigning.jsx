@@ -1,58 +1,48 @@
-// Free signing: sign any vocabulary words in any order; each one is recognised as you go, either
-// pause-segmented (segmenter.js) or, in fluent mode, without pauses (fluent.js, sliding window).
-// Unsure guesses in pause mode are shown as "?" rather than a wrong word (fluent mode only
-// emits confident signs).
+// Free signing: sign any vocabulary words in any order; each one is recognised as you go by the
+// phrase tracker (phraseTracker.js): straight through, or with pauses, or lowering the hand.
+// (Chosen on validation phrases: lower word error rate than the decoder or the pause segmenter
+// alone, DEVLOG 2026-11-11.)
+// Unsure guesses are shown as "?" rather than a wrong word.
 import { useRef, useState } from "react";
 import CameraView from "../components/CameraView.jsx";
-import ModeSwitch, { useSigningMode } from "../components/ModeSwitch.jsx";
 import { useSignPipeline } from "../hooks/useSignPipeline.js";
-import { createFluentDecoder } from "../lib/fluent.js";
 import { recogniseSign } from "../lib/judgeSign.js";
-import { createSegmenter } from "../lib/segmenter.js";
+import { createPhraseTracker } from "../lib/phraseTracker.js";
 import { labelOf } from "../lib/vocabulary.js";
 
 const MIN_CONFIDENCE = 0.4; // below this the guess is shown as "?"
 
 export default function FreeSigning({ vocab }) {
-  const [mode, setModeState] = useSigningMode();
-  const modeRef = useRef(mode);
-  const splitterRef = useRef(null);
+  const trackerRef = useRef(null);
   const [words, setWords] = useState([]);
   const [signing, setSigning] = useState(false);
+  const [stillness, setStillness] = useState(0);
 
   const pipeline = useSignPipeline((frame, size, classifier) => {
-    if (!splitterRef.current) {
-      splitterRef.current = modeRef.current === "fluent"
-        ? createFluentDecoder(size.width, size.height, classifier.predictBatch, classifier.labels)
-        : createSegmenter(size.width, size.height);
-    }
-    const splitter = splitterRef.current;
-    const seg = splitter.push(frame);
-    setSigning(modeRef.current === "pause" ? splitter.state === "active" : frame.hands.some(Boolean));
-    if (!seg) return;
-    const guess = modeRef.current === "fluent" ? { sign: seg.sign, prob: seg.prob } : recogniseSign(seg.frames, size, classifier);
+    trackerRef.current ??= createPhraseTracker(size.width, size.height, classifier, null);
+    const tracker = trackerRef.current;
+    const found = tracker.push(frame);
+    setSigning(frame.hands.some(Boolean));
+    setStillness(Math.round(tracker.stillness * 11) / 11);
+    if (!found) return;
+    const guess = recogniseSign(found.frames, size, classifier); // { sign, prob }
     if (guess) setWords((w) => [...w, guess]);
   });
-
-  const setMode = (m) => {
-    modeRef.current = m;
-    setModeState(m);
-    splitterRef.current = null;
-  };
 
   return (
     <section>
       <h1>Free signing</h1>
-      <p className="muted">Sign any of the curriculum's {vocab.units.reduce((n, u) => n + u.signs.length, 0)} words, in any order.</p>
-      <ModeSwitch mode={mode} onChange={setMode} />
+      <p className="muted">
+        Sign any of the curriculum's {vocab.units.reduce((n, u) => n + u.signs.length, 0)} words, in any order. Go straight
+        from one sign to the next, or pause between them.
+      </p>
       <div className="practice-grid">
         <div>
           <CameraView {...pipeline} />
           {pipeline.status === "ready" && (
             <div className={`coach ${signing ? "signing" : "waiting"}`}>
-              <span className="coach-icon" aria-hidden="true">{signing ? "👀" : "✋"}</span>
-              {mode === "fluent" ? "Sign straight through. Words appear as they're recognised."
-                : signing ? "Watching… pause or lower your hand to finish the sign." : "Raise your hand and sign."}
+              <span className="coach-icon still-ring" style={{ "--still": stillness }} aria-hidden="true">{signing ? "👀" : "✋"}</span>
+              {signing ? "Watching… words appear as they're recognised." : "Raise your hand and sign."}
             </div>
           )}
         </div>

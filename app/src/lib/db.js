@@ -63,7 +63,8 @@ const committed = (tx) => new Promise((resolve, reject) => {
 });
 
 // Save one attempt and update that sign's progress in a single transaction.
-// attempt: { signId, mode, verdict, closeness?, issues?, phrase?, framing?, participantId? }
+// attempt: { signId, mode, verdict, closeness?, issues?, phrase?, joined?, framing?, participantId? }
+// (joined: for phrase signs after the first, "flowing" | "paused" | "lowered", phraseTracker.js)
 // returns { record: the updated sign record, newlyMastered: true if this attempt earned mastery }
 export async function recordAttempt(attempt) {
   const db = await openDb();
