@@ -1,0 +1,23 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Data and model outputs (too large for git; regenerate with the scripts)
+model/data/raw/
+model/data/processed/
+model/data/reference_candidates/
+model/artifacts/*
+!model/artifacts/.gitkeep
+
+# Node
+node_modules/
+app/dist/
+
+# Secrets
+kaggle.json
+.env
+
+# Working notes (kept local, not part of the code repo)
+docs/

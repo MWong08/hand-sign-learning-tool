@@ -1,0 +1,8 @@
+{
+  "name": "verify-tfjs",
+  "private": true,
+  "type": "module",
+  "description": "Checks that exported TF.js models give the same outputs as the Python models",
+  "scripts": { "verify": "node verify.mjs" },
+  "dependencies": { "@tensorflow/tfjs": "^4.22.0" }
+}

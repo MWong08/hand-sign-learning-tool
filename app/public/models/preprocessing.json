@@ -1,0 +1,42 @@
+{
+ "seq_len": 24,
+ "max_gap": 5,
+ "fps": 15,
+ "canonical_slot": 1,
+ "canonical_label": "Right",
+ "pose_mirror": [
+  0,
+  4,
+  5,
+  6,
+  1,
+  2,
+  3,
+  8,
+  7,
+  10,
+  9,
+  12,
+  11,
+  14,
+  13,
+  16,
+  15,
+  18,
+  17,
+  20,
+  19,
+  22,
+  21,
+  24,
+  23
+ ],
+ "n_features": 64,
+ "landmarks": {
+  "nose": 0,
+  "l_shoulder": 11,
+  "r_shoulder": 12,
+  "wrist": 0,
+  "middle_mcp": 9
+ }
+}

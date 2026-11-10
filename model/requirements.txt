@@ -1,0 +1,15 @@
+certifi
+tensorflow==2.19.*
+numpy<2.2
+pandas
+pyarrow
+scikit-learn
+matplotlib
+kaggle
+jupyter
+# TF.js export (src/export_tfjs.py). tensorflowjs is installed WITHOUT its dependencies on Windows,
+# because one of them (tensorflow-decision-forests) has no Windows build:
+#   pip install --no-deps tensorflowjs==4.22.0 "tf-keras==2.19.*" tensorflow-hub importlib_resources
+jax
+setuptools<81
+mediapipe

@@ -1,0 +1,114 @@
+{
+  "_about": "Curriculum vocabulary (DRAFT, to be reviewed by the user). Sign ids are PopSign v1.0 'game' sign names. Shared by the model (class list) and the app (units, display labels). Units are taught in order.",
+  "source": "PopSign ASL v1.0 (Georgia Tech / DPAN), CC BY 4.0, https://signdata.cc.gatech.edu",
+  "units": [
+    {
+      "id": "greetings",
+      "title": "Greetings & Manners",
+      "signs": [
+        {"id": "hello", "label": "Hello"},
+        {"id": "bye", "label": "Bye"},
+        {"id": "please", "label": "Please"},
+        {"id": "thankyou", "label": "Thank you"},
+        {"id": "yes", "label": "Yes"},
+        {"id": "no", "label": "No"}
+      ]
+    },
+    {
+      "id": "family",
+      "title": "Family & People",
+      "signs": [
+        {"id": "mom", "label": "Mom"},
+        {"id": "dad", "label": "Dad"},
+        {"id": "grandma", "label": "Grandma"},
+        {"id": "grandpa", "label": "Grandpa"},
+        {"id": "boy", "label": "Boy"},
+        {"id": "girl", "label": "Girl"}
+      ]
+    },
+    {
+      "id": "pronouns_questions",
+      "title": "Me, You & Questions",
+      "signs": [
+        {"id": "minemy", "label": "Mine / My"},
+        {"id": "weus", "label": "We / Us"},
+        {"id": "hesheit", "label": "He / She / It"},
+        {"id": "yourself", "label": "Yourself"},
+        {"id": "who", "label": "Who"},
+        {"id": "where", "label": "Where"},
+        {"id": "why", "label": "Why"}
+      ]
+    },
+    {
+      "id": "feelings",
+      "title": "Feelings & Needs",
+      "signs": [
+        {"id": "happy", "label": "Happy"},
+        {"id": "sad", "label": "Sad"},
+        {"id": "mad", "label": "Mad"},
+        {"id": "hungry", "label": "Hungry"},
+        {"id": "thirsty", "label": "Thirsty"},
+        {"id": "sick", "label": "Sick"}
+      ]
+    },
+    {
+      "id": "actions",
+      "title": "Everyday Actions",
+      "signs": [
+        {"id": "see", "label": "See"},
+        {"id": "like", "label": "Like"},
+        {"id": "drink", "label": "Drink"},
+        {"id": "sleep", "label": "Sleep"},
+        {"id": "think", "label": "Think"},
+        {"id": "listen", "label": "Listen"}
+      ]
+    },
+    {
+      "id": "time",
+      "title": "Time",
+      "signs": [
+        {"id": "now", "label": "Now"},
+        {"id": "later", "label": "Later"},
+        {"id": "tomorrow", "label": "Tomorrow"},
+        {"id": "yesterday", "label": "Yesterday"},
+        {"id": "time", "label": "Time"}
+      ]
+    },
+    {
+      "id": "colours",
+      "title": "Colours",
+      "signs": [
+        {"id": "red", "label": "Red"},
+        {"id": "blue", "label": "Blue"},
+        {"id": "green", "label": "Green"},
+        {"id": "yellow", "label": "Yellow"},
+        {"id": "black", "label": "Black"},
+        {"id": "white", "label": "White"}
+      ]
+    },
+    {
+      "id": "things",
+      "title": "Food, Animals & Home",
+      "signs": [
+        {"id": "water", "label": "Water"},
+        {"id": "milk", "label": "Milk"},
+        {"id": "food", "label": "Food"},
+        {"id": "apple", "label": "Apple"},
+        {"id": "dog", "label": "Dog"},
+        {"id": "cat", "label": "Cat"},
+        {"id": "bird", "label": "Bird"},
+        {"id": "home", "label": "Home"}
+      ]
+    }
+  ],
+  "phrases": [
+    {"signs": ["hello", "minemy", "mom"], "gloss": "HELLO MY MOM", "english": "Hello, (this is) my mom."},
+    {"signs": ["where", "dog"], "gloss": "WHERE DOG", "english": "Where is the dog?"},
+    {"signs": ["yourself", "hungry"], "gloss": "YOURSELF HUNGRY", "english": "Are you hungry?"},
+    {"signs": ["minemy", "cat", "sleep"], "gloss": "MY CAT SLEEP", "english": "My cat is sleeping."},
+    {"signs": ["dad", "thirsty", "drink", "water"], "gloss": "DAD THIRSTY DRINK WATER", "english": "Dad is thirsty and drinks water."},
+    {"signs": ["who", "happy"], "gloss": "WHO HAPPY", "english": "Who is happy?"},
+    {"signs": ["tomorrow", "grandma", "home"], "gloss": "TOMORROW GRANDMA HOME", "english": "Grandma (comes) home tomorrow."},
+    {"signs": ["thankyou", "bye"], "gloss": "THANK-YOU BYE", "english": "Thank you, bye!"}
+  ]
+}
