@@ -7,6 +7,13 @@ import { isPhraseUnlocked, isUnitUnlocked, nextSignIndex, unitStatus } from "../
 export const UNIT_COLORS = ["#22a35a", "#1d8fe0", "#9b51e0", "#e8590c", "#d6336c", "#0ca678", "#f59f00", "#5c7cfa"];
 const SWING = [0, 1, 1.6, 1, 0, -1, -1.6, -1]; // trail offsets, in steps of 36 px
 
+// a link on the path; when locked, a button that offers to skip ahead (SkipDialog.jsx)
+function PathLink({ open, href, onLocked, label, lockedLabel, className, children }) {
+  return open
+    ? <a className={className} href={href} aria-label={label}>{children}</a>
+    : <button type="button" className={className} onClick={onLocked} aria-label={lockedLabel}>{children}</button>;
+}
+
 export default function Home({ vocab, progress }) {
   const { records, unlockAll, skipped, game } = progress;
   const skipper = useSkipAhead(vocab, progress);
@@ -37,15 +44,16 @@ export default function Home({ vocab, progress }) {
           const next = nextSignIndex(unit, records);
           return (
             <li key={unit.id} className={`path-unit ${open ? "" : "locked"}`} style={{ "--unit": color }}>
-              <a className="unit-banner" href={open ? `#/unit/${u}` : undefined} aria-disabled={!open}>
+              <PathLink className="unit-banner" open={open} href={`#/unit/${u}`} onLocked={() => skipper.askUnit(u)}
+                lockedLabel={`Unit ${u + 1}, ${unit.title}: locked. Skip ahead?`}>
                 <span>
                   <span className="unit-number">Unit {u + 1}</span>
                   <span className="unit-name">{unit.title}</span>
                 </span>
                 <span className="unit-banner-side">
-                  {status.complete ? "🏆" : open ? `${status.mastered}/${status.total}` : "🔒"}
+                  {status.complete ? "🏆" : open ? `${status.mastered}/${status.total}` : "🔒 Skip ahead"}
                 </span>
-              </a>
+              </PathLink>
               <ol className="trail">
                 {unit.signs.map((sign, i) => {
                   const r = records[sign.id];
@@ -53,11 +61,12 @@ export default function Home({ vocab, progress }) {
                   const state = !open ? "locked" : r?.mastered ? "mastered" : isNext ? "current" : r ? "started" : "open";
                   return (
                     <li key={sign.id} style={{ "--swing": SWING[i % SWING.length] }}>
-                      <a className={`node ${state}`} href={open ? `#/practice/${u}/${i}` : undefined} aria-disabled={!open}
-                        aria-label={`${sign.label}: ${state === "mastered" ? "mastered" : state === "locked" ? "locked" : "practise"}`}>
+                      <PathLink className={`node ${state}`} open={open} href={`#/practice/${u}/${i}`} onLocked={() => skipper.askUnit(u)}
+                        label={`${sign.label}: ${state === "mastered" ? "mastered" : "practise"}`}
+                        lockedLabel={`${sign.label}: locked. Skip ahead to Unit ${u + 1}?`}>
                         {isNext && <span className="node-start">Start</span>}
                         <span className="node-face" aria-hidden="true">{state === "mastered" ? "★" : state === "locked" ? "🔒" : "✋"}</span>
-                      </a>
+                      </PathLink>
                       <span className="node-label">{sign.label}</span>
                     </li>
                   );

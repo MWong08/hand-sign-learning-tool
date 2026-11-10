@@ -169,7 +169,11 @@ h3 { font-weight: 800; }
 .unit-banner .unit-number { font-size: 0.8rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.85; }
 .unit-banner .unit-name { font-size: 1.2rem; font-weight: 900; }
 .unit-banner-side { font-weight: 900; font-size: 1.1rem; background: rgba(255, 255, 255, 0.2); border-radius: 12px; padding: 6px 12px; }
-.path-unit.locked .unit-banner { background: var(--locked); color: var(--muted); box-shadow: 0 5px 0 var(--locked-dark); cursor: not-allowed; }
+.path-unit.locked .unit-banner { background: var(--locked); color: var(--muted); box-shadow: 0 5px 0 var(--locked-dark); }
+/* locked banner and nodes are buttons (tap to skip ahead): reset button styling */
+button.unit-banner, button.node { border: 0; font: inherit; cursor: pointer; }
+button.unit-banner { width: 100%; text-align: left; }
+.path-unit.locked .unit-banner-side { background: var(--surface); color: var(--link); font-size: 0.9rem; white-space: nowrap; }
 .unit-hint { font-size: 0.9rem; color: var(--muted); text-align: center; font-weight: 700; margin: 6px 0 0; }
 
 .trail { list-style: none; padding: 18px 0 4px; margin: 0; display: grid; justify-items: center; gap: 14px; }
@@ -185,7 +189,7 @@ h3 { font-weight: 800; }
 .node.started { background: color-mix(in srgb, var(--unit) 75%, white); }
 .node.mastered { background: var(--gold); box-shadow: 0 7px 0 var(--gold-dark); }
 .node.mastered .node-face { font-size: 2rem; }
-.node.locked { background: var(--locked); box-shadow: 0 7px 0 var(--locked-dark); cursor: not-allowed; }
+.node.locked { background: var(--locked); box-shadow: 0 7px 0 var(--locked-dark); }
 .node.locked .node-face { font-size: 1.3rem; filter: grayscale(1); opacity: 0.6; }
 .node.current { outline: 6px solid color-mix(in srgb, var(--unit) 30%, transparent); outline-offset: 4px; }
 .node-start {
