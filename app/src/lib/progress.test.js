@@ -2,7 +2,7 @@ import "fake-indexeddb/auto"; // an in-memory IndexedDB, so db.js can be tested 
 import { beforeEach, describe, expect, it } from "vitest";
 import { getAllSignProgress, getAttempts, getSetting, recordAttempt, resetProgress, setSetting } from "./db.js";
 import {
-  applyAttempt, emptySignRecord, isPhraseUnlocked, isUnitUnlocked, MASTERY_STREAK, nextSignIndex, unitStatus,
+  applyAttempt, emptySignRecord, isPhraseUnlocked, isUnitUnlocked, MASTERY_STREAK, nextSignIndex, skipKey, unitStatus,
 } from "./progress.js";
 
 const units = [
@@ -42,6 +42,21 @@ describe("mastery rules", () => {
     const phrase = { signs: ["hello", "mom"] };
     expect(isPhraseUnlocked(phrase, mastered("hello"))).toBe(false);
     expect(isPhraseUnlocked(phrase, mastered("hello", "mom"))).toBe(true);
+  });
+
+  it("opens a skipped-to unit and every unit before it, but not later ones", () => {
+    const three = [...units, { id: "u3", signs: [{ id: "red" }] }];
+    const skipped = [skipKey.unit(three[2])];
+    expect([0, 1, 2].map((i) => isUnitUnlocked(three, i, {}, false, skipped))).toEqual([true, true, true]);
+    expect(isUnitUnlocked(three, 2, {}, false, [skipKey.unit(three[1])])).toBe(false);
+    expect(unitStatus(three[1], {})).toMatchObject({ mastered: 0 }); // skipping masters nothing
+  });
+
+  it("opens a skipped phrase only", () => {
+    const a = { signs: ["hello", "mom"], gloss: "HELLO MOM" };
+    const b = { signs: ["bye"], gloss: "BYE" };
+    expect(isPhraseUnlocked(a, {}, false, [skipKey.phrase(a)])).toBe(true);
+    expect(isPhraseUnlocked(b, {}, false, [skipKey.phrase(a)])).toBe(false);
   });
 
   it("suggests the first sign not yet mastered", () => {

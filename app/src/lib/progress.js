@@ -6,6 +6,9 @@
 //   unit unlocked    unit 1 always; unit n once unit n-1 is complete
 //   phrase unlocked  once every sign in the phrase is mastered (combine signs you already know)
 //   unlockAll        a setting that opens everything (for exploring, UAT testers and markers)
+//   skipped          items the learner chose to skip ahead to, after a confirmation (skipKey()):
+//                    skipping to unit n opens units 1..n; skipping a phrase opens that phrase.
+//                    Skipping never marks anything as mastered.
 
 export const MASTERY_STREAK = 2;
 
@@ -38,13 +41,21 @@ export function unitStatus(unit, records) {
   return { mastered, total: unit.signs.length, complete: mastered === unit.signs.length };
 }
 
-export function isUnitUnlocked(units, index, records, unlockAll = false) {
+// keys for the skipped list: "unit:<unit id>" or "phrase:<gloss>"
+export const skipKey = {
+  unit: (unit) => `unit:${unit.id}`,
+  phrase: (phrase) => `phrase:${phrase.gloss}`,
+};
+
+export function isUnitUnlocked(units, index, records, unlockAll = false, skipped = []) {
   if (unlockAll || index === 0) return true;
+  // skipped to this unit or to a later one
+  if (units.some((u, k) => k >= index && skipped.includes(skipKey.unit(u)))) return true;
   return unitStatus(units[index - 1], records).complete;
 }
 
-export function isPhraseUnlocked(phrase, records, unlockAll = false) {
-  return unlockAll || phrase.signs.every((s) => isMastered(records, s));
+export function isPhraseUnlocked(phrase, records, unlockAll = false, skipped = []) {
+  return unlockAll || skipped.includes(skipKey.phrase(phrase)) || phrase.signs.every((s) => isMastered(records, s));
 }
 
 // The sign to practise next in a unit: the first one not yet mastered (or the first sign).

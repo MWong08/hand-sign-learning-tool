@@ -1,9 +1,11 @@
 // The curriculum's short phrases. A phrase unlocks once all its signs are mastered.
+import { useSkipAhead } from "../components/SkipDialog.jsx";
 import { isPhraseUnlocked } from "../lib/progress.js";
 import { labelOf } from "../lib/vocabulary.js";
 
 export default function PhraseList({ vocab, progress }) {
-  const { records, unlockAll } = progress;
+  const { records, unlockAll, skipped } = progress;
+  const skipper = useSkipAhead(vocab, progress);
   return (
     <section>
       <h1>Phrases</h1>
@@ -12,7 +14,7 @@ export default function PhraseList({ vocab, progress }) {
       </p>
       <ul className="phrase-list">
         {vocab.phrases.map((p, i) => {
-          const open = isPhraseUnlocked(p, records, unlockAll);
+          const open = isPhraseUnlocked(p, records, unlockAll, skipped);
           const missing = p.signs.filter((s) => !records[s]?.mastered).map((s) => labelOf(vocab, s));
           return (
             <li key={p.gloss}>
@@ -24,10 +26,14 @@ export default function PhraseList({ vocab, progress }) {
                   {!open && <span className="unit-hint">Master first: {missing.join(", ")}</span>}
                 </span>
               </a>
+              {!open && (
+                <button type="button" className="link-button phrase-skip" onClick={() => skipper.askPhrase(i)}>Try anyway ⏭️</button>
+              )}
             </li>
           );
         })}
       </ul>
+      {skipper.dialog}
     </section>
   );
 }

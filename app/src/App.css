@@ -12,6 +12,7 @@
   --border-strong: #cfd6de;
   --brand: #22a35a;
   --brand-dark: #188046;
+  --link: #188046;
   --blue: #1d8fe0;
   --blue-dark: #166fb0;
   --correct: #22a35a;
@@ -36,13 +37,13 @@
   :root:not([data-theme="light"]) {
     --bg: #131f24; --surface: #1a2a31; --sunken: #20333b; --text: #eef3f5; --muted: #9fb0b8;
     --border: #2c4049; --border-strong: #3b525c; --correct-bg: #183a28; --close-bg: #3d3115;
-    --incorrect-bg: #3f1d1f; --locked: #2c3d44; --locked-dark: #1f2e34; color-scheme: dark;
+    --incorrect-bg: #3f1d1f; --locked: #2c3d44; --locked-dark: #1f2e34; --link: #6fdc9b; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #131f24; --surface: #1a2a31; --sunken: #20333b; --text: #eef3f5; --muted: #9fb0b8;
   --border: #2c4049; --border-strong: #3b525c; --correct-bg: #183a28; --close-bg: #3d3115;
-  --incorrect-bg: #3f1d1f; --locked: #2c3d44; --locked-dark: #1f2e34; color-scheme: dark;
+  --incorrect-bg: #3f1d1f; --locked: #2c3d44; --locked-dark: #1f2e34; --link: #6fdc9b; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -317,6 +318,16 @@ h3 { font-weight: 800; }
 .confetti i { position: absolute; top: -12px; width: 10px; height: 14px; border-radius: 2px; animation: fall linear infinite; }
 @keyframes fall { to { transform: translateY(105vh) rotate(540deg); } }
 @keyframes fade { from { opacity: 0; } }
+
+/* skip ahead: a text-style button on locked items, and its confirmation (reuses the celebration card) */
+.link-button {
+  background: none; border: 0; padding: 4px 2px; font: inherit; font-weight: 800; color: var(--link);
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.link-button:hover { color: var(--brand); }
+.phrase-skip { display: block; margin: 4px 0 0 auto; font-size: 0.9rem; }
+.skip-emoji { font-size: 3rem; }
+.skip-card p { margin: 4px 0; }
 
 /* ================================================================ camera */
 .camera { position: relative; }

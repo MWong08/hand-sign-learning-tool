@@ -12,6 +12,7 @@ import { describeIssue, fixesFor } from "../lib/diagnose.js";
 import { createFluentDecoder } from "../lib/fluent.js";
 import { xpFor } from "../lib/gamify.js";
 import { analyseSign } from "../lib/judgeSign.js";
+import { useSkipAhead } from "../components/SkipDialog.jsx";
 import { isPhraseUnlocked } from "../lib/progress.js";
 import { createSegmenter } from "../lib/segmenter.js";
 import { labelOf } from "../lib/vocabulary.js";
@@ -20,6 +21,7 @@ export default function PhrasePractice({ vocab, phraseIndex, progress }) {
   const phrase = vocab.phrases[phraseIndex];
   const labels = phrase.signs.map((s) => labelOf(vocab, s));
   const templatesRef = useTemplates();
+  const skipper = useSkipAhead(vocab, progress);
   const [mode, setModeState] = useSigningMode();
   const modeRef = useRef(mode);
   const splitterRef = useRef(null);         // segmenter (pause mode) or fluent decoder
@@ -59,13 +61,15 @@ export default function PhrasePractice({ vocab, phraseIndex, progress }) {
     restart();
   };
 
-  if (!isPhraseUnlocked(phrase, progress.records, progress.unlockAll)) {
+  if (!isPhraseUnlocked(phrase, progress.records, progress.unlockAll, progress.skipped)) {
     return (
       <section className="empty-state">
         <span className="empty-emoji" aria-hidden="true">🔒</span>
         <h2>{phrase.gloss}</h2>
-        <p>Master all the signs in this phrase first.</p>
+        <p>Master all the signs in this phrase first, or try it anyway.</p>
         <a className="button primary" href="#/phrases">Back to phrases</a>
+        <button type="button" className="button" onClick={() => skipper.askPhrase(phraseIndex)}>⏭️ Try this phrase anyway</button>
+        {skipper.dialog}
       </section>
     );
   }

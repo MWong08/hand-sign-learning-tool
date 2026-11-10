@@ -18,8 +18,8 @@ import { labelOf } from "../lib/vocabulary.js";
 
 export default function Quiz({ vocab, progress }) {
   const pool = useMemo(() => vocab.units
-    .filter((_, k) => isUnitUnlocked(vocab.units, k, progress.records, progress.unlockAll))
-    .flatMap((u) => u.signs.map((s) => s.id)), [vocab, progress.records, progress.unlockAll]);
+    .filter((_, k) => isUnitUnlocked(vocab.units, k, progress.records, progress.unlockAll, progress.skipped))
+    .flatMap((u) => u.signs.map((s) => s.id)), [vocab, progress.records, progress.unlockAll, progress.skipped]);
 
   const [questions, setQuestions] = useState(() => buildQuiz(pool));
   const [i, setI] = useState(0);

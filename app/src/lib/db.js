@@ -119,7 +119,8 @@ export async function resetProgress() {
   await committed(tx);
 }
 
-// UAT log. event: { participantId, type: "session-start" | "session-end" | "page", page? }
+// UAT log. event: { participantId, type: "session-start" | "session-end" | "page" | "skip", page? }
+// (for "skip", page is the skipped item: "unit:<id>" or "phrase:<gloss>")
 export async function logEvent(event) {
   const db = await openDb();
   const tx = db.transaction("events", "readwrite");

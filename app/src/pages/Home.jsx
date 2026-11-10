@@ -1,17 +1,19 @@
 // Home: the curriculum as a learning path (IR FR4). Each unit is a coloured banner followed by
 // a winding trail of round sign buttons; units unlock in order as the previous one is mastered.
 // The next sign to learn is marked "Start". Below the path: phrases, quiz and free signing.
+import { useSkipAhead } from "../components/SkipDialog.jsx";
 import { isPhraseUnlocked, isUnitUnlocked, nextSignIndex, unitStatus } from "../lib/progress.js";
 
 export const UNIT_COLORS = ["#22a35a", "#1d8fe0", "#9b51e0", "#e8590c", "#d6336c", "#0ca678", "#f59f00", "#5c7cfa"];
 const SWING = [0, 1, 1.6, 1, 0, -1, -1.6, -1]; // trail offsets, in steps of 36 px
 
 export default function Home({ vocab, progress }) {
-  const { records, unlockAll, game } = progress;
-  const phrasesOpen = vocab.phrases.filter((p) => isPhraseUnlocked(p, records, unlockAll)).length;
+  const { records, unlockAll, skipped, game } = progress;
+  const skipper = useSkipAhead(vocab, progress);
+  const phrasesOpen = vocab.phrases.filter((p) => isPhraseUnlocked(p, records, unlockAll, skipped)).length;
   const newcomer = Object.keys(records).length === 0;
   // the "current" unit: first unlocked one not yet complete
-  const currentUnit = vocab.units.findIndex((u, i) => isUnitUnlocked(vocab.units, i, records, unlockAll) && !unitStatus(u, records).complete);
+  const currentUnit = vocab.units.findIndex((u, i) => isUnitUnlocked(vocab.units, i, records, unlockAll, skipped) && !unitStatus(u, records).complete);
 
   return (
     <section className="home">
@@ -29,7 +31,7 @@ export default function Home({ vocab, progress }) {
 
       <ol className="path">
         {vocab.units.map((unit, u) => {
-          const open = isUnitUnlocked(vocab.units, u, records, unlockAll);
+          const open = isUnitUnlocked(vocab.units, u, records, unlockAll, skipped);
           const status = unitStatus(unit, records);
           const color = UNIT_COLORS[u % UNIT_COLORS.length];
           const next = nextSignIndex(unit, records);
@@ -61,7 +63,12 @@ export default function Home({ vocab, progress }) {
                   );
                 })}
               </ol>
-              {!open && <p className="unit-hint">Master Unit {u} to unlock</p>}
+              {!open && (
+                <p className="unit-hint">
+                  Master Unit {u} to unlock{" "}
+                  <button type="button" className="link-button" onClick={() => skipper.askUnit(u)}>or skip ahead ⏭️</button>
+                </p>
+              )}
             </li>
           );
         })}
@@ -87,6 +94,7 @@ export default function Home({ vocab, progress }) {
         </a>
       </div>
       </div>
+      {skipper.dialog}
     </section>
   );
 }

@@ -10,15 +10,18 @@ export function useProgress() {
   const [records, setRecords] = useState({}); // { signId: record }
   const [attempts, setAttempts] = useState([]); // every saved attempt (for XP and streak)
   const [unlockAll, setUnlockAllState] = useState(false);
+  const [skipped, setSkipped] = useState([]); // units / phrases skipped ahead to (progress.js skipKey)
   const [uatSession, setUatSessionState] = useState(null); // { participantId, startedAt } | null
   const [lastUatSession, setLastUatSession] = useState(null); // the most recent ended session
   const [loaded, setLoaded] = useState(false);
   const sessionRef = useRef(null); // the same session, readable inside callbacks without re-creating them
   sessionRef.current = uatSession;
+  const skippedRef = useRef([]);
+  skippedRef.current = skipped;
 
   useEffect(() => {
-    Promise.all([getAllSignProgress(), getSetting("unlockAll", false), getSetting("uatSession", null), getSetting("uatLast", null), getAllAttempts()])
-      .then(([r, u, s, last, a]) => { setRecords(r); setUnlockAllState(u); setUatSessionState(s); setLastUatSession(last); setAttempts(a); })
+    Promise.all([getAllSignProgress(), getSetting("unlockAll", false), getSetting("uatSession", null), getSetting("uatLast", null), getAllAttempts(), getSetting("skipped", [])])
+      .then(([r, u, s, last, a, sk]) => { setRecords(r); setUnlockAllState(u); setUatSessionState(s); setLastUatSession(last); setAttempts(a); setSkipped(sk); })
       .catch(() => {}) // storage unavailable (e.g. private mode): the app still works, unsaved
       .finally(() => setLoaded(true));
   }, []);
@@ -41,19 +44,30 @@ export function useProgress() {
     await setSetting("unlockAll", value).catch(() => {});
   }, []);
 
-  const reset = useCallback(async () => {
+  // skip ahead to a locked unit or phrase (the page asks for confirmation first); logged in UAT mode
+  const skip = useCallback(async (key) => {
+    if (skippedRef.current.includes(key)) return;
+    const next = [...skippedRef.current, key];
+    skippedRef.current = next;
+    setSkipped(next);
+    await setSetting("skipped", next).catch(() => {});
+    const session = sessionRef.current;
+    if (session) await logEvent({ participantId: session.participantId, type: "skip", page: key }).catch(() => {});
+  }, []);
+
+  const clearProgress = async () => {
     await resetProgress().catch(() => {});
+    await setSetting("skipped", []).catch(() => {});
     setRecords({});
     setAttempts([]);
-  }, []);
+    setSkipped([]);
+  };
+
+  const reset = useCallback(clearProgress, []);
 
   // fresh: clear the previous participant's progress first, so everyone starts at Unit 1
   const startUatSession = useCallback(async (participantId, { fresh = true } = {}) => {
-    if (fresh) {
-      await resetProgress().catch(() => {});
-      setRecords({});
-      setAttempts([]);
-    }
+    if (fresh) await clearProgress();
     const session = { participantId, startedAt: Date.now() };
     await setSetting("uatSession", session).catch(() => {});
     await logEvent({ participantId, type: "session-start" }).catch(() => {});
@@ -81,7 +95,7 @@ export function useProgress() {
   const game = useMemo(() => gameStats(attempts, records), [attempts, records]);
 
   return {
-    records, attempts, game, unlockAll, loaded, record, setUnlockAll, reset,
+    records, attempts, game, unlockAll, skipped, skip, loaded, record, setUnlockAll, reset,
     uatSession, lastUatSession, startUatSession, endUatSession, logPage,
   };
 }
