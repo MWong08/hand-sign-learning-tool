@@ -121,7 +121,8 @@ export async function resetProgress() {
 }
 
 // UAT log. event: { participantId, type: "session-start" | "session-end" | "page" | "skip", page? }
-// (for "skip", page is the skipped item: "unit:<id>" or "phrase:<gloss>")
+// (for "skip", page is the skipped item: "unit:<id>" or "phrase:<gloss>"; for the camera
+//  controls "start", "pause" and "restart", page is the screen, e.g. "phrase/1")
 export async function logEvent(event) {
   const db = await openDb();
   const tx = db.transaction("events", "readwrite");

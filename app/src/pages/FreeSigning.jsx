@@ -12,7 +12,7 @@ import { labelOf } from "../lib/vocabulary.js";
 
 const MIN_CONFIDENCE = 0.4; // below this the guess is shown as "?"
 
-export default function FreeSigning({ vocab }) {
+export default function FreeSigning({ vocab, progress }) {
   const trackerRef = useRef(null);
   const [words, setWords] = useState([]);
   const [signing, setSigning] = useState(false);
@@ -27,7 +27,13 @@ export default function FreeSigning({ vocab }) {
     if (!found) return;
     const guess = recogniseSign(found.frames, size, classifier); // { sign, prob }
     if (guess) setWords((w) => [...w, guess]);
-  });
+  }, { log: (type) => progress.logAction(type, "free") });
+
+  const restart = () => {
+    trackerRef.current = null;
+    setWords([]);
+    progress.logAction("restart", "free");
+  };
 
   return (
     <section>
@@ -38,8 +44,8 @@ export default function FreeSigning({ vocab }) {
       </p>
       <div className="practice-grid">
         <div>
-          <CameraView {...pipeline} />
-          {pipeline.status === "ready" && (
+          <CameraView {...pipeline} onRestart={words.length > 0 ? restart : undefined} restartLabel="Clear and restart" />
+          {pipeline.detecting && (
             <div className={`coach ${signing ? "signing" : "waiting"}`}>
               <span className="coach-icon still-ring" style={{ "--still": stillness }} aria-hidden="true">{signing ? "👀" : "✋"}</span>
               {signing ? "Watching… words appear as they're recognised." : "Raise your hand and sign."}
@@ -57,7 +63,6 @@ export default function FreeSigning({ vocab }) {
               </span>
             ))}
           </p>
-          {words.length > 0 && <button type="button" className="button" onClick={() => setWords([])}>Clear</button>}
         </div>
       </div>
     </section>

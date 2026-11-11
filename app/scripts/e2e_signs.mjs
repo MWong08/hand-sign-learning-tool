@@ -36,6 +36,7 @@ for (const sign of signs) {
     args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", `--use-file-for-fake-video-capture=${cam}`] });
   const page = await browser.newPage();
   await page.goto(`http://localhost:5173/#/practice/${sign.route}`, { waitUntil: "load" });
+  await (await page.waitForSelector(".start-button", { timeout: 60000 })).click(); // detection starts on Start
   const got = [];
   let lastAttempt = "0";
   const deadline = Date.now() + 75000;

@@ -15,6 +15,9 @@ export default function Help() {
       <h3>2. Practise a sign</h3>
       <ol>
         <li>Watch the reference video. It's a Deaf signer performing the sign.</li>
+        <li>Get into position (you'll see yourself on the camera), then press <strong>▶ Start</strong>. Nothing is
+          checked until you do; <strong>Pause</strong> stops it again, and <strong>Restart</strong> starts the sign,
+          phrase or quiz over.</li>
         <li>Raise <strong>one hand</strong> and copy the sign.</li>
         <li><strong>Lower your hand</strong> when you finish. That tells the app the sign is complete.</li>
       </ol>

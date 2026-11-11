@@ -50,6 +50,9 @@ export default function Quiz({ vocab, progress }) {
     if (outcome.verdict !== "unclear") {
       progress.record({ signId: target, mode: "quiz", verdict: outcome.verdict, closeness: outcome.closeness, issues: outcome.issues, framing: framing.active });
     }
+  }, {
+    onStart: () => { recorderRef.current.reset(); setSigning(false); },
+    log: (type) => progress.logAction(type, "quiz"),
   });
 
   const next = () => {
@@ -57,7 +60,9 @@ export default function Quiz({ vocab, progress }) {
     go(i + 1, "asking");
   };
   const restart = () => {
+    progress.logAction("restart", "quiz");
     recorderRef.current.reset();
+    setSigning(false);
     setQuestions(buildQuiz(pool));
     setAnswers([]);
     go(0, "asking");
@@ -123,8 +128,8 @@ export default function Quiz({ vocab, progress }) {
           ? <ReferencePanel signId={signId} label={labelOf(vocab, signId)} template={template} />
           : <div className="quiz-hidden card"><span className="empty-emoji" aria-hidden="true">🤔</span>Sign it from memory. The answer appears afterwards.</div>}
         <div>
-          <CameraView {...pipeline} />
-          {pipeline.status === "ready" && !answer && (
+          <CameraView {...pipeline} onRestart={restart} restartLabel="Restart quiz" />
+          {pipeline.detecting && !answer && (
             <div className={`coach ${signing ? "signing" : "waiting"}`}>
               <span className="coach-icon" aria-hidden="true">{signing ? "👀" : "✋"}</span>
               {signing ? "Watching… lower your hand when you finish." : "Raise one hand, sign, then lower your hand."}

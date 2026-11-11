@@ -92,10 +92,17 @@ export function useProgress() {
     if (session) logEvent({ participantId: session.participantId, type: "page", page }).catch(() => {});
   }, []);
 
+  // camera controls (start / pause / restart) on a screen; logged in UAT mode, to see how often
+  // testers needed to stop or start over
+  const logAction = useCallback((type, page) => {
+    const session = sessionRef.current;
+    if (session) logEvent({ participantId: session.participantId, type, page }).catch(() => {});
+  }, []);
+
   const game = useMemo(() => gameStats(attempts, records), [attempts, records]);
 
   return {
     records, attempts, game, unlockAll, skipped, skip, loaded, record, setUnlockAll, reset,
-    uatSession, lastUatSession, startUatSession, endUatSession, logPage,
+    uatSession, lastUatSession, startUatSession, endUatSession, logPage, logAction,
   };
 }

@@ -3,6 +3,12 @@
 //
 // Returns refs for the <video> and overlay <canvas>, the loaded classifier and status, and the
 // framing check ({ ok, issue }: is the learner set up so recognition can work; lib/framing.js).
+//
+// Start / pause: the camera, skeleton overlay and set-up check run as soon as the screen opens,
+// so the learner can get into position, but frames only reach the page (onFrame), i.e. signs
+// are only detected, after they press Start. `detecting`, `start()` and `pause()` drive the
+// controls in CameraView. options: { autoStart: detect straight away (developer view),
+// onStart: called on every start, e.g. to drop a half-recorded attempt, log(type): UAT logging }.
 import { useEffect, useRef, useState } from "react";
 import { createClassifier } from "../lib/classifier.js";
 import { createFramingMonitor, measureLuma } from "../lib/framing.js";
@@ -10,11 +16,37 @@ import { createLandmarkers, detectFrame } from "../lib/landmarks.js";
 
 export const FPS = 15; // same rate as the training data (every 2nd frame of 30 fps video)
 
-export function useSignPipeline(onFrame) {
+// Moving on to the next sign in a lesson opens a new screen. If the learner was already
+// detecting, it carries on there, so Start isn't needed for every sign.
+let carryOn = false;
+export function keepDetectingOnNextScreen() {
+  carryOn = true;
+}
+
+export function useSignPipeline(onFrame, options = {}) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const onFrameRef = useRef(onFrame);
   onFrameRef.current = onFrame; // always call the latest callback without restarting the loop
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+
+  const [detecting, setDetecting] = useState(() => Boolean(options.autoStart) || carryOn);
+  const detectingRef = useRef(detecting);
+  useEffect(() => { carryOn = false; }, []);
+  const setDetectingBoth = (value) => {
+    detectingRef.current = value;
+    setDetecting(value);
+  };
+  const start = () => {
+    optionsRef.current.onStart?.();
+    setDetectingBoth(true);
+    optionsRef.current.log?.("start");
+  };
+  const pause = () => {
+    setDetectingBoth(false);
+    optionsRef.current.log?.("pause");
+  };
 
   const [status, setStatus] = useState("loading"); // loading | ready | error
   const [error, setError] = useState(null);
@@ -67,7 +99,7 @@ export function useSignPipeline(onFrame) {
               shown = key;
               setFraming({ ready: check.ready, ok: check.ok, issue: check.issue });
             }
-            onFrameRef.current?.(frame, size, clf, check);
+            if (detectingRef.current) onFrameRef.current?.(frame, size, clf, check);
           }
           requestAnimationFrame(loop);
         };
@@ -85,7 +117,7 @@ export function useSignPipeline(onFrame) {
     };
   }, []);
 
-  return { videoRef, canvasRef, status, error, classifier, landmarksMs, framing };
+  return { videoRef, canvasRef, status, error, classifier, landmarksMs, framing, detecting, start, pause };
 }
 
 // Hand joints (amber = MediaPipe "Left" slot, green = "Right") and the body reference points

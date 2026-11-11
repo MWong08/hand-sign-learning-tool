@@ -10,7 +10,7 @@ import Celebration from "../components/Celebration.jsx";
 import ReferencePanel from "../components/ReferencePanel.jsx";
 import ResultSheet from "../components/ResultSheet.jsx";
 import { navigate } from "../hooks/useHashRoute.js";
-import { useSignPipeline } from "../hooks/useSignPipeline.js";
+import { keepDetectingOnNextScreen, useSignPipeline } from "../hooks/useSignPipeline.js";
 import { useTemplates } from "../hooks/useTemplates.js";
 import { createAttemptRecorder } from "../lib/attempt.js";
 import { analyseSign } from "../lib/judgeSign.js";
@@ -25,6 +25,7 @@ export default function Practice({ vocab, unitIndex, signIndex, progress }) {
   const [result, setResult] = useState(null);
   const [attemptNo, setAttemptNo] = useState(0);
   const [celebrate, setCelebrate] = useState(null); // "sign" | "unit"
+  const here = `practice/${unitIndex}/${signIndex}`; // this screen, for UAT logging
 
   const pipeline = useSignPipeline((frame, size, classifier, framing) => {
     const event = recorderRef.current.push(frame);
@@ -44,12 +45,26 @@ export default function Practice({ vocab, unitIndex, signIndex, progress }) {
         });
       }
     }
+  }, {
+    // a fresh start never continues a half-recorded attempt
+    onStart: () => { recorderRef.current.reset(); setPhase("waiting"); },
+    log: (type) => progress.logAction(type, here),
   });
+  const restartAttempt = () => {
+    recorderRef.current.reset();
+    setResult(null);
+    setPhase("waiting");
+    progress.logAction("restart", here);
+  };
 
   const record = progress.records[sign.id];
   const status = unitStatus(unit, progress.records);
   const last = signIndex === unit.signs.length - 1;
-  const next = () => (last ? navigate("unit", unitIndex) : navigate("practice", unitIndex, signIndex + 1));
+  const next = () => {
+    if (last) return navigate("unit", unitIndex);
+    if (pipeline.detecting) keepDetectingOnNextScreen(); // no need to press Start again for the next sign
+    navigate("practice", unitIndex, signIndex + 1);
+  };
   const template = templatesRef.current?.[sign.id]?.mean;
   const streakLeft = record?.mastered ? 0 : Math.max(0, MASTERY_STREAK - (record?.streak ?? 0));
 
@@ -78,8 +93,8 @@ export default function Practice({ vocab, unitIndex, signIndex, progress }) {
       <div className="practice-grid">
         <ReferencePanel signId={sign.id} label={sign.label} template={template} />
         <div>
-          <CameraView {...pipeline} />
-          {pipeline.status === "ready" && (phase === "signing" || !result) && (
+          <CameraView {...pipeline} onRestart={restartAttempt} restartLabel="Restart attempt" />
+          {pipeline.detecting && (phase === "signing" || !result) && (
             <div className={`coach ${phase}`}>
               <span className="coach-icon" aria-hidden="true">{phase === "signing" ? "👀" : "✋"}</span>
               {phase === "signing" ? "Watching… lower your hand when you finish." : "Raise one hand, sign, then lower your hand."}

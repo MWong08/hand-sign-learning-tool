@@ -345,13 +345,22 @@ button.unit-banner { width: 100%; text-align: left; }
 /* ================================================================ camera */
 .camera { position: relative; }
 .camera-mirror { position: relative; transform: scaleX(-1); }
-.camera video, .camera canvas { width: 100%; display: block; border-radius: var(--radius); background: #0f172a; }
-.camera canvas { position: absolute; inset: 0; }
+/* the video shows the learner; the skeleton canvas on top must stay transparent */
+.camera video { width: 100%; display: block; border-radius: var(--radius); background: #0f172a; }
+.camera canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+.camera-start {
+  position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px;
+  border-radius: var(--radius); background: rgba(15, 23, 42, 0.35); color: #fff; font-weight: 800; text-align: center; padding: 16px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.start-button { font-size: 1.15rem; padding: 14px 32px; text-shadow: none; }
+.camera-controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+.button.small { padding: 8px 14px; font-size: 0.9rem; min-height: 44px; }
 .camera-message { position: absolute; inset: 0; margin: 0; display: grid; place-items: center; padding: 16px; color: #fff; text-align: center; font-weight: 700; }
 .camera-message.error { color: #fecaca; }
 .framing-tip, .framing-ok {
   position: absolute; top: 10px; left: 10px; right: 10px; margin: 0; padding: 8px 12px;
-  border-radius: 12px; font-size: 0.95rem; text-align: center; font-weight: 800;
+  border-radius: 12px; font-size: 0.95rem; text-align: center; font-weight: 800; z-index: 2;
 }
 .framing-tip { background: rgba(224, 138, 0, 0.95); color: #fff; }
 .framing-ok { right: auto; padding: 4px 10px; font-size: 0.8rem; background: rgba(34, 163, 90, 0.9); color: #fff; }

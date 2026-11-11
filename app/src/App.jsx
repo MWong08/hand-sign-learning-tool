@@ -53,7 +53,7 @@ export default function App() {
       page = valid(a, vocab.phrases) && <PhrasePractice key={a} vocab={vocab} phraseIndex={a} progress={progress} />;
       break;
     case "free":
-      page = <FreeSigning vocab={vocab} />;
+      page = <FreeSigning vocab={vocab} progress={progress} />;
       break;
     case "quiz":
       page = <Quiz key={route.params.join("/")} vocab={vocab} progress={progress} />;

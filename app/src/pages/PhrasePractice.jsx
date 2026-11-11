@@ -51,12 +51,14 @@ export default function PhrasePractice({ vocab, phraseIndex, progress }) {
       progress.record({ signId: target, mode: "phrase", phrase: phrase.gloss, joined: found.joined ?? undefined,
         verdict: outcome.verdict, closeness: outcome.closeness, issues: outcome.issues, framing: framing.active });
     }
-  });
+  }, { log: (type) => progress.logAction(type, `phrase/${phraseIndex}`) });
 
   const restart = () => {
     trackerRef.current = null;
     countRef.current = 0;
     setResults([]);
+    setStuck(false);
+    progress.logAction("restart", `phrase/${phraseIndex}`);
   };
 
   if (!isPhraseUnlocked(phrase, progress.records, progress.unlockAll, progress.skipped)) {
@@ -99,8 +101,8 @@ export default function PhrasePractice({ vocab, phraseIndex, progress }) {
       <div className="practice-grid">
         <PhraseVideo signs={phrase.signs} labels={labels} />
         <div>
-          <CameraView {...pipeline} />
-          {pipeline.status === "ready" && !finished && (
+          <CameraView {...pipeline} onRestart={results.length > 0 ? restart : undefined} restartLabel="Restart phrase" />
+          {pipeline.detecting && !finished && (
             <div className={`coach ${signing ? "signing" : "waiting"}`}>
               <span className="coach-icon still-ring" style={{ "--still": stillness }} aria-hidden="true">{signing ? "👀" : "✋"}</span>
               <span>

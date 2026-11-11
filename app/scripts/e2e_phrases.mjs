@@ -55,6 +55,9 @@ for (const style of STYLES) {
     const box = await page.waitForSelector("input[type=checkbox]");
     if (!(await box.evaluate((b) => b.checked))) await box.click();
     await page.goto(`${BASE}#/phrase/${i}`, { waitUntil: "load" });
+    // detection starts on Start (versions before 2026-11-12 had no Start button and detected at once)
+    const startButton = await page.waitForSelector(".start-button", { timeout: 60000 }).catch(() => null);
+    if (startButton) await startButton.click();
     // the video loops: wait for the result sheet, or give up after a few loops
     const done = await page.waitForSelector(".sheet", { timeout: 60000 }).then(() => true).catch(() => false);
     const chips = await page.$$eval(".phrase-chip", (els) => els.map((e) => ({

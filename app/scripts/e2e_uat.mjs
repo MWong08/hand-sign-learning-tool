@@ -92,6 +92,7 @@ for (const c of cases) {
   await page.goto(APP + "#/unit/0");
   await sleep(500);
   await page.goto(APP + "#/practice/0/0"); // hello
+  await (await page.waitForSelector(".start-button", { timeout: 60000 })).click(); // detection starts on Start
   let judged = false;
   for (let i = 0; i < 100 && !judged; i++) {
     await sleep(400);
