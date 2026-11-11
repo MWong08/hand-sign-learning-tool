@@ -22,6 +22,10 @@ Phrases use the curriculum's phrase list where the signer has all the signs, plu
 
 Run from model/:  python src/make_phrase_eval.py              -> data/processed/phrase_eval.json (test signers)
                   python src/make_phrase_eval.py --split val  -> data/processed/phrase_eval_val.json
+                  python src/make_phrase_eval.py --long       -> data/processed/phrase_eval_long.json
+  --long: LONGER phrases (2026-11-12), test signers: the curriculum's level-2 phrases (4-5 signs)
+  plus random 4-5 sign sequences. Only for reporting how the (unchanged) settings cope with longer
+  phrases; the standard sets keep using only the level-1 phrases, so earlier results are unchanged.
                   (segmenter thresholds are tuned on the val phrases; test phrases are for final reporting)
 """
 import argparse
@@ -100,7 +104,11 @@ def empty_frames(n, pose_like):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", default="test", choices=["val", "test"])
-    split = ap.parse_args().split
+    ap.add_argument("--long", action="store_true", help="4-5 sign phrases (test signers)")
+    args = ap.parse_args()
+    split, long = args.split, args.long
+    if long and split != "test":
+        ap.error("--long phrases are built from test signers only")
     rng = np.random.default_rng(SEED)
     jitter_rng = np.random.default_rng(SEED + 1)  # separate, so the phrases stay the same as before
     jitter = load_held_jitter(split)
@@ -120,8 +128,10 @@ def main():
             clips[(str(who[i]), int(W[i]), int(Hh[i]))][sign].append((h, p))
 
     groups = [g for g in clips if len(clips[g]) >= 10]
-    sequences = [p["signs"] for p in vocab["phrases"]]
-    sequences += [list(rng.choice(signs, int(rng.integers(2, 5)), replace=False)) for _ in range(N_RANDOM)]
+    level = 2 if long else 1
+    sequences = [p["signs"] for p in vocab["phrases"] if p.get("level", 1) == level]
+    low, high = (4, 6) if long else (2, 5)  # random lengths: 2-4 signs, or 4-5 for --long
+    sequences += [list(rng.choice(signs, int(rng.integers(low, high)), replace=False)) for _ in range(N_RANDOM)]
 
     cases = []
     for seq in sequences:
@@ -159,10 +169,10 @@ def main():
         cases.append({"signs": list(seq), "signer": g[0], "width": g[1], "height": g[2],
                       "lowered": lowered, "paused": paused, "held": held, "continuous": continuous})
 
-    out = P.OUT_DIR / ("phrase_eval.json" if split == "test" else f"phrase_eval_{split}.json")
+    out = P.OUT_DIR / ("phrase_eval_long.json" if long else "phrase_eval.json" if split == "test" else f"phrase_eval_{split}.json")
     out.write_text(json.dumps(cases))
     lengths = [len(c["signs"]) for c in cases]
-    print(f"{len(cases)} phrases ({np.bincount(lengths)[2:].tolist()} of length 2/3/4), "
+    print(f"{len(cases)} phrases (lengths {dict(zip(*(a.tolist() for a in np.unique(lengths, return_counts=True))))}), "
           f"{len({c['signer'] for c in cases})} signers -> {out} ({out.stat().st_size / 1e6:.1f} MB)")
 
 

@@ -99,7 +99,7 @@ export default function PhrasePractice({ vocab, phraseIndex, progress }) {
       </div>
 
       <div className="practice-grid">
-        {/* whole phrase on a loop until Start; then only the sign to make next */}
+        {/* whole phrase until Start; then only the sign to make next (unless the learner picks "Whole phrase") */}
         <PhraseVideo signs={phrase.signs} labels={labels} current={pipeline.detecting && !finished ? results.length : null} />
         <div>
           <CameraView {...pipeline} onRestart={results.length > 0 ? restart : undefined} restartLabel="Restart phrase" />

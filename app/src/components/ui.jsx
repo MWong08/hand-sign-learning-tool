@@ -55,16 +55,27 @@ export function SignVideo({ signId, className = "", controls = false }) {
   );
 }
 
-// A phrase's reference clips. Before the learner starts (current = null) it plays the clips one
-// after another, so they can watch the whole phrase. While they sign (current = the index of the
-// sign they're about to make) it shows only that sign's clip, on a loop, so the video always
-// matches what they should be doing.
+// A phrase's reference clips, in one of two modes the learner picks (remembered per browser):
+//   "next"  (default) before Start, the clips play one after another so the whole phrase can be
+//           watched; while signing, only the clip of the sign to make next (current), on a loop,
+//           so the video always matches what they should be doing;
+//   "whole" the whole phrase keeps cycling, also while signing, for learners who prefer to see
+//           how the signs join up.
 export function PhraseVideo({ signs, labels, current = null }) {
+  const [mode, setMode] = usePreference("phrase-video", "next");
   const [cycle, setCycle] = useState(0);
-  const focused = current !== null && current < signs.length;
+  const focused = mode === "next" && current !== null && current < signs.length;
   const i = focused ? current : cycle;
   return (
     <figure className="reference">
+      <div className="segmented" role="radiogroup" aria-label="Reference video shows">
+        <button type="button" role="radio" aria-checked={mode === "next"} className={mode === "next" ? "on" : ""} onClick={() => setMode("next")}>
+          Next sign
+        </button>
+        <button type="button" role="radio" aria-checked={mode === "whole"} className={mode === "whole" ? "on" : ""} onClick={() => setMode("whole")}>
+          Whole phrase
+        </button>
+      </div>
       {focused && <span className="phrase-next">Next: {labels[i]}</span>}
       <video key={`${signs[i]}-${i}-${focused}`} src={referenceVideo(signs[i])} autoPlay muted playsInline loop={focused}
         onEnded={focused ? undefined : () => setCycle((cycle + 1) % signs.length)} />

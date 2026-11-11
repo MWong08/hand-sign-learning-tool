@@ -1,5 +1,5 @@
 {
-  "_about": "Curriculum vocabulary (DRAFT, to be reviewed by the user). Sign ids are PopSign v1.0 'game' sign names. Shared by the model (class list) and the app (units, display labels). Units are taught in order.",
+  "_about": "Curriculum vocabulary (DRAFT, to be reviewed by the user). Sign ids are PopSign v1.0 'game' sign names. Shared by the model (class list) and the app (units, display labels). Units are taught in order. Phrases with \"level\": 2 are the longer phrases (4-5 signs, added 2026-11-12); the original 8 are level 1 and are the ones in the standard phrase evaluation.",
   "source": "PopSign ASL v1.0 (Georgia Tech / DPAN), CC BY 4.0, https://signdata.cc.gatech.edu",
   "units": [
     {
@@ -109,6 +109,12 @@
     {"signs": ["dad", "thirsty", "drink", "water"], "gloss": "DAD THIRSTY DRINK WATER", "english": "Dad is thirsty and drinks water."},
     {"signs": ["who", "happy"], "gloss": "WHO HAPPY", "english": "Who is happy?"},
     {"signs": ["tomorrow", "grandma", "home"], "gloss": "TOMORROW GRANDMA HOME", "english": "Grandma (comes) home tomorrow."},
-    {"signs": ["thankyou", "bye"], "gloss": "THANK-YOU BYE", "english": "Thank you, bye!"}
+    {"signs": ["thankyou", "bye"], "gloss": "THANK-YOU BYE", "english": "Thank you, bye!"},
+    {"signs": ["minemy", "cat", "see", "bird"], "gloss": "MY CAT SEE BIRD", "english": "My cat sees a bird.", "level": 2},
+    {"signs": ["tomorrow", "grandma", "home", "happy"], "gloss": "TOMORROW GRANDMA HOME, HAPPY", "english": "Grandma comes home tomorrow. I'm happy!", "level": 2},
+    {"signs": ["minemy", "dog", "hungry", "food", "where"], "gloss": "MY DOG HUNGRY, FOOD WHERE?", "english": "My dog is hungry. Where's the food?", "level": 2},
+    {"signs": ["yesterday", "boy", "sick", "sleep", "home"], "gloss": "YESTERDAY BOY SICK, SLEEP HOME", "english": "Yesterday the boy was sick and slept at home.", "level": 2},
+    {"signs": ["girl", "thirsty", "drink", "milk", "please"], "gloss": "GIRL THIRSTY, DRINK MILK PLEASE", "english": "The girl is thirsty: some milk, please.", "level": 2},
+    {"signs": ["hello", "minemy", "grandpa", "like", "apple"], "gloss": "HELLO, MY GRANDPA LIKE APPLE", "english": "Hello! My grandpa likes apples.", "level": 2}
   ]
 }
