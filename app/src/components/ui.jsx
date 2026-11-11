@@ -55,13 +55,19 @@ export function SignVideo({ signId, className = "", controls = false }) {
   );
 }
 
-// Plays the clips of a phrase one after another, highlighting the current sign.
-export function PhraseVideo({ signs, labels }) {
-  const [i, setI] = useState(0);
+// A phrase's reference clips. Before the learner starts (current = null) it plays the clips one
+// after another, so they can watch the whole phrase. While they sign (current = the index of the
+// sign they're about to make) it shows only that sign's clip, on a loop, so the video always
+// matches what they should be doing.
+export function PhraseVideo({ signs, labels, current = null }) {
+  const [cycle, setCycle] = useState(0);
+  const focused = current !== null && current < signs.length;
+  const i = focused ? current : cycle;
   return (
     <figure className="reference">
-      <video key={`${signs[i]}-${i}`} src={referenceVideo(signs[i])} autoPlay muted playsInline
-        onEnded={() => setI((i + 1) % signs.length)} />
+      {focused && <span className="phrase-next">Next: {labels[i]}</span>}
+      <video key={`${signs[i]}-${i}-${focused}`} src={referenceVideo(signs[i])} autoPlay muted playsInline loop={focused}
+        onEnded={focused ? undefined : () => setCycle((cycle + 1) % signs.length)} />
       <figcaption>
         <span className="phrase-gloss">
           {signs.map((s, k) => <span key={k} className={k === i ? "current" : ""}>{labels[k]}</span>)}

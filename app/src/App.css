@@ -262,6 +262,7 @@ button.unit-banner { width: 100%; text-align: left; }
 .reference { margin: 0; display: grid; gap: 8px; }
 .reference .sign-video { aspect-ratio: auto; max-height: 340px; object-fit: contain; }
 .reference figcaption { font-size: 0.8rem; color: var(--muted); }
+.phrase-next { justify-self: start; padding: 4px 12px; border-radius: 999px; background: var(--blue); color: #fff; font-weight: 900; font-size: 0.9rem; }
 .video-with-controls { display: grid; gap: 8px; }
 .video-controls { display: flex; gap: 8px; }
 
