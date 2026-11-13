@@ -1,8 +1,11 @@
 // Practice-history summaries and CSV export (for the learner's progress page, and for analysing
 // UAT sessions: export a participant's attempts after their session).
 
+import { isSigned } from "./review.js";
+
+// exercise: the kind of lesson exercise (lesson.js), empty outside lessons
 // joined (phrase signs only): how the sign followed the one before - flowing, paused or lowered
-const CSV_COLUMNS = ["timestamp", "date", "mode", "sign", "phrase", "joined", "verdict", "closeness", "issues", "framing"];
+const CSV_COLUMNS = ["timestamp", "date", "mode", "exercise", "sign", "phrase", "joined", "verdict", "closeness", "issues", "framing"];
 
 // RFC 4180 quoting: wrap in quotes if the value has a comma, quote or newline; double inner quotes
 export function csvCell(value) {
@@ -15,6 +18,7 @@ export function attemptsToCsv(attempts) {
     a.timestamp,
     new Date(a.timestamp).toISOString(),
     a.mode,
+    a.exercise ?? "",
     a.signId,
     a.phrase ?? "",
     a.joined ?? "",
@@ -26,9 +30,10 @@ export function attemptsToCsv(attempts) {
   return [CSV_COLUMNS, ...rows].map((r) => r.map(csvCell).join(",")).join("\n");
 }
 
-// Overall numbers for the progress page
+// Overall numbers for the progress page (accuracy and closeness over signed attempts only, not
+// the multiple-choice answers in lessons)
 export function summarise(attempts, records) {
-  const judged = attempts.filter((a) => a.verdict !== "unclear");
+  const judged = attempts.filter((a) => a.verdict !== "unclear" && isSigned(a));
   const correct = judged.filter((a) => a.verdict === "correct").length;
   const withCloseness = judged.filter((a) => a.closeness !== undefined);
   const days = new Set(attempts.map((a) => new Date(a.timestamp).toDateString()));

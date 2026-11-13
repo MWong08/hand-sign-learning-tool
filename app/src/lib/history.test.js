@@ -11,8 +11,8 @@ const attempts = [
 describe("practice history", () => {
   it("exports attempts as CSV with a header row", () => {
     const lines = attemptsToCsv(attempts).split("\n");
-    expect(lines[0]).toBe("timestamp,date,mode,sign,phrase,joined,verdict,closeness,issues,framing");
-    expect(lines[1]).toBe(`${attempts[0].timestamp},2026-10-24T10:00:00.000Z,practice,hello,,,correct,91.3,,`);
+    expect(lines[0]).toBe("timestamp,date,mode,exercise,sign,phrase,joined,verdict,closeness,issues,framing");
+    expect(lines[1]).toBe(`${attempts[0].timestamp},2026-10-24T10:00:00.000Z,practice,,hello,,,correct,91.3,,`);
     expect(lines[2].endsWith(",close,60,index:straighten; position:higher,tooFar")).toBe(true);
     expect(lines.length).toBe(4);
   });

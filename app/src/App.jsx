@@ -1,5 +1,5 @@
 // App shell: loads the vocabulary and the learner's progress, then shows the screen named in
-// the URL hash (#/unit/2, #/practice/2/3, #/phrase/1, ...).
+// the URL hash (#/unit/2, #/lesson/2/0, #/practice/2/3, #/phrase/1, #/review, ...).
 import { useEffect, useState } from "react";
 import { useHashRoute } from "./hooks/useHashRoute.js";
 import { useProgress } from "./hooks/useProgress.js";
@@ -7,6 +7,7 @@ import { loadVocabulary } from "./lib/vocabulary.js";
 import FreeSigning from "./pages/FreeSigning.jsx";
 import Help from "./pages/Help.jsx";
 import Home from "./pages/Home.jsx";
+import Lesson from "./pages/Lesson.jsx";
 import LiveRecognition from "./pages/LiveRecognition.jsx";
 import PhraseList from "./pages/PhraseList.jsx";
 import PhrasePractice from "./pages/PhrasePractice.jsx";
@@ -46,6 +47,17 @@ export default function App() {
       page = valid(a, vocab.units) && valid(b, vocab.units[a].signs) &&
         <Practice key={`${a}-${b}`} vocab={vocab} unitIndex={a} signIndex={b} progress={progress} />;
       break;
+    case "lesson": {
+      // #/lesson/<unit>/<lesson> or #/lesson/<unit>/review
+      const unitReview = route.params[1] === "review";
+      const ok = valid(a, vocab.units) && (unitReview || (Number.isInteger(b) && b >= 0));
+      page = ok && <Lesson key={route.params.join("/")} vocab={vocab} progress={progress}
+        target={unitReview ? { kind: "unit-review", unitIndex: a } : { kind: "lesson", unitIndex: a, lessonIndex: b }} />;
+      break;
+    }
+    case "review":
+      page = <Lesson key="review" vocab={vocab} progress={progress} target={{ kind: "review" }} />;
+      break;
     case "phrases":
       page = <PhraseList vocab={vocab} progress={progress} />;
       break;
@@ -75,7 +87,7 @@ export default function App() {
   }
 
   // lesson screens hide the navigation so the learner can focus (education-app "lesson mode")
-  const lesson = ["practice", "phrase", "quiz"].includes(route.name) && Boolean(page);
+  const lesson = ["practice", "phrase", "quiz", "lesson", "review"].includes(route.name) && Boolean(page);
   const g = progress.game;
 
   return (

@@ -8,7 +8,10 @@
 // so the learner can get into position, but frames only reach the page (onFrame), i.e. signs
 // are only detected, after they press Start. `detecting`, `start()` and `pause()` drive the
 // controls in CameraView. options: { autoStart: detect straight away (developer view),
-// onStart: called on every start, e.g. to drop a half-recorded attempt, log(type): UAT logging }.
+// onStart: called on every start, e.g. to drop a half-recorded attempt, log(type): UAT logging,
+// capture: also give each detected frame a small picture of the camera (frame.snap, a promise of
+// a JPEG Blob) for the side-by-side replay in lessons. The pictures only live in memory, on the
+// page that asked for them; they are never saved or uploaded }.
 import { useEffect, useRef, useState } from "react";
 import { createClassifier } from "../lib/classifier.js";
 import { createFramingMonitor, measureLuma } from "../lib/framing.js";
@@ -61,6 +64,7 @@ export function useSignPipeline(onFrame, options = {}) {
     let frameCount = 0;
     const framingMonitor = createFramingMonitor();
     const lumaCanvas = document.createElement("canvas");
+    const snapCanvas = document.createElement("canvas");
     let shown = "pending";
 
     async function start() {
@@ -99,7 +103,10 @@ export function useSignPipeline(onFrame, options = {}) {
               shown = key;
               setFraming({ ready: check.ready, ok: check.ok, issue: check.issue });
             }
-            if (detectingRef.current) onFrameRef.current?.(frame, size, clf, check);
+            if (detectingRef.current) {
+              if (optionsRef.current.capture) frame.snap = snapshot(video, snapCanvas);
+              onFrameRef.current?.(frame, size, clf, check);
+            }
           }
           requestAnimationFrame(loop);
         };
@@ -118,6 +125,20 @@ export function useSignPipeline(onFrame, options = {}) {
   }, []);
 
   return { videoRef, canvasRef, status, error, classifier, landmarksMs, framing, detecting, start, pause };
+}
+
+// A small JPEG of the current camera picture (unmirrored, like the landmarks). toBlob copies the
+// canvas straight away, so one canvas can be reused for every frame.
+const SNAP_WIDTH = 240;
+function snapshot(video, canvas) {
+  const w = SNAP_WIDTH;
+  const h = Math.round((SNAP_WIDTH * video.videoHeight) / video.videoWidth);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+  canvas.getContext("2d").drawImage(video, 0, 0, w, h);
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.7));
 }
 
 // Hand joints (amber = MediaPipe "Left" slot, green = "Right") and the body reference points

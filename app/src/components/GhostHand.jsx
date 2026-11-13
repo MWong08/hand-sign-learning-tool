@@ -14,11 +14,11 @@ const HAND_SCALE = 0.42;  // drawn hand size (wrist to middle knuckle) in should
 const VIEW = { left: -1.2, right: 1.2, top: -1.6, bottom: 0.8 }; // shoulder widths around the shoulder midpoint
 const FPS = 8;            // slower than real time (15 fps), so the shape is easy to follow
 const HOLD_FRAMES = 6;    // pause on the last frame before looping
-const BONES = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12],
+export const BONES = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12],
   [9, 13], [13, 14], [14, 15], [15, 16], [13, 17], [0, 17], [17, 18], [18, 19], [19, 20]];
 const PALM = new Set(["5-9", "9-13", "13-17", "0-17", "0-5"]);
 // finger of a bone (by its outer joint), or null for the palm
-const fingerOf = ([a, b]) => (PALM.has(`${a}-${b}`) ? null : FINGERS[Math.floor((b - 1) / 4)]);
+export const fingerOf = ([a, b]) => (PALM.has(`${a}-${b}`) ? null : FINGERS[Math.floor((b - 1) / 4)]);
 
 const COLORS = { body: "#cbd5e1", sign: "#16a34a", you: "#f97316", flag: "#dc2626", path: "#86efac" };
 

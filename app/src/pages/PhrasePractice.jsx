@@ -5,10 +5,10 @@
 // phrase as a whole also gets feedback on its FLOW: how the signs were joined (phraseFlow.js).
 import { useRef, useState } from "react";
 import CameraView from "../components/CameraView.jsx";
-import { JOINED_TEXT, PhraseVideo, VERDICT_TEXT } from "../components/ui.jsx";
+import PhraseChips from "../components/PhraseChips.jsx";
+import { PhraseVideo } from "../components/ui.jsx";
 import { useSignPipeline } from "../hooks/useSignPipeline.js";
 import { useTemplates } from "../hooks/useTemplates.js";
-import { describeIssue, fixesFor } from "../lib/diagnose.js";
 import { xpFor } from "../lib/gamify.js";
 import { analyseSign } from "../lib/judgeSign.js";
 import { phraseFlow } from "../lib/phraseFlow.js";
@@ -29,6 +29,7 @@ export default function PhrasePractice({ vocab, phraseIndex, progress }) {
   const trackerRef = useRef(null);
   const countRef = useRef(0);               // signs judged so far (a ref: frames arrive faster than renders)
   const [results, setResults] = useState([]);
+  const resultsRef = useRef([]);
   const [signing, setSigning] = useState(false);
   const [stillness, setStillness] = useState(0); // 0..1 while holding still (the pause ring)
   const [stuck, setStuck] = useState(false);       // signing for a while and nothing found yet
@@ -46,7 +47,13 @@ export default function PhrasePractice({ vocab, phraseIndex, progress }) {
     const target = phrase.signs[pos];
     const outcome = { ...analyseSign(found.frames, size, classifier, templatesRef.current, target),
       joined: found.joined, start: found.start, end: found.end };
-    setResults((r) => [...r, outcome]);
+    const all = [...resultsRef.current, outcome];
+    resultsRef.current = all;
+    setResults(all);
+    // phrase finished: log it (for the "Phrase maker" badge)
+    if (all.length === phrase.signs.length) {
+      progress.completeLesson({ key: `phrase:${phrase.gloss}`, perfect: all.every((x) => x.verdict === "correct") });
+    }
     if (outcome.verdict !== "unclear") {
       progress.record({ signId: target, mode: "phrase", phrase: phrase.gloss, joined: found.joined ?? undefined,
         verdict: outcome.verdict, closeness: outcome.closeness, issues: outcome.issues, framing: framing.active });
@@ -56,6 +63,7 @@ export default function PhrasePractice({ vocab, phraseIndex, progress }) {
   const restart = () => {
     trackerRef.current = null;
     countRef.current = 0;
+    resultsRef.current = [];
     setResults([]);
     setStuck(false);
     progress.logAction("restart", `phrase/${phraseIndex}`);
@@ -118,20 +126,7 @@ export default function PhrasePractice({ vocab, phraseIndex, progress }) {
         </div>
       </div>
 
-      <ol className="phrase-results">
-        {phrase.signs.map((s, i) => {
-          const r = results[i];
-          return (
-            <li key={i} className={`phrase-chip ${r ? r.verdict : i === results.length ? "current" : "pending"}`}>
-              {r?.joined && <span className={`chip-joined ${r.joined}`}>{JOINED_TEXT[r.joined]}</span>}
-              <span className="chip-label">{labels[i]}</span>
-              {r && <span className="chip-verdict">{VERDICT_TEXT[r.verdict]}{r.closeness !== undefined && ` · ${Math.round(r.closeness)}%`}</span>}
-              {r?.lookedLike && <span className="chip-detail">Looked like “{labelOf(vocab, r.lookedLike)}”</span>}
-              {r && r.verdict !== "correct" && fixesFor(r, 1)[0] && <span className="chip-detail">{describeIssue(fixesFor(r, 1)[0])}</span>}
-            </li>
-          );
-        })}
-      </ol>
+      <PhraseChips signs={phrase.signs} labels={labels} results={results} vocab={vocab} />
 
       {finished && (
         <div className={`sheet ${perfect ? "correct" : correct > 0 ? "close" : "incorrect"}`} role="status">

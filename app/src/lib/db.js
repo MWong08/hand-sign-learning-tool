@@ -2,16 +2,20 @@
 // browser-local"; IR 2.4.4: no server-side database, data never leaves the device).
 //
 // Object stores (these are the classes in the report's database class diagram):
-//   attempts  { id (auto), signId, mode, verdict, closeness, issues, phrase, timestamp }
-//             one row per practice attempt (history)
+//   attempts  { id (auto), signId, mode, exercise, verdict, closeness, issues, phrase, timestamp }
+//             one row per practice attempt (history). In lessons (mode "lesson"), exercise is the
+//             kind of exercise (lib/lesson.js); multiple-choice answers ("pick-word", "pick-video")
+//             are kept in the history but do not count towards mastery: only signing does.
 //   signs     { signId, attempts, correct, streak, bestCloseness, mastered, masteredAt, lastPracticed }
 //             one row per sign, updated with every attempt (see progress.js applyAttempt)
-//   settings  { key, value }   e.g. unlockAll, uatSession
+//   settings  { key, value }   e.g. unlockAll, uatSession, lessons (finished lessons and phrases:
+//             [{ key, at, stars, perfect, accuracy }], for stars, bonus XP and badges)
 //   events    { id (auto), participantId, type, page, timestamp }
 //             user-testing log (UAT mode only): session start/end and every screen visited
 // Attempts made during a UAT session also carry participantId; every attempt carries framing
 // (the camera set-up problems active when it ended, lib/framing.js).
 import { applyAttempt, emptySignRecord } from "./progress.js";
+import { isSigned } from "./review.js";
 
 const DB_NAME = "sign-practice";
 const DB_VERSION = 2; // 2: added the events store (existing progress is kept)
@@ -63,7 +67,7 @@ const committed = (tx) => new Promise((resolve, reject) => {
 });
 
 // Save one attempt and update that sign's progress in a single transaction.
-// attempt: { signId, mode, verdict, closeness?, issues?, phrase?, joined?, framing?, participantId? }
+// attempt: { signId, mode, exercise?, verdict, closeness?, issues?, phrase?, joined?, framing?, participantId? }
 // (joined: for phrase signs after the first, "flowing" | "paused" | "lowered", phraseTracker.js)
 // returns { record: the updated sign record, newlyMastered: true if this attempt earned mastery }
 export async function recordAttempt(attempt) {
@@ -73,8 +77,8 @@ export async function recordAttempt(attempt) {
   tx.objectStore("attempts").add(row);
   const signs = tx.objectStore("signs");
   const current = (await done(signs.get(attempt.signId))) ?? emptySignRecord(attempt.signId);
-  const updated = applyAttempt(current, row);
-  signs.put(updated);
+  const updated = isSigned(attempt) ? applyAttempt(current, row) : current;
+  if (updated !== current) signs.put(updated);
   await committed(tx);
   return { record: updated, newlyMastered: updated.mastered && !current.mastered };
 }

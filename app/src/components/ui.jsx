@@ -24,29 +24,49 @@ export function usePreference(key, initial) {
   return [value, set];
 }
 
-// Looping, muted reference clip of one sign (PopSign ASL v1.0, CC BY 4.0).
-// controls: slow motion (clips are only 1.3-3.4 s long) and mirror (so the signer's hand is on
-// the same side as the learner's in the mirrored camera view).
+// Reference clips play slower than real time by default (supervisor meeting 2: "the demo video is
+// too fast"; the clips are only 1.3-3.4 s long). The learner can pick the speed; it is remembered.
+export const SPEEDS = [0.5, 0.75, 1];
+export const DEFAULT_SPEED = 0.75;
+export function useVideoSpeed() {
+  return usePreference("video-speed", DEFAULT_SPEED);
+}
+
+// Speed switch: 0.5x / 0.75x / 1x
+export function SpeedSwitch({ speed, setSpeed }) {
+  return (
+    <div className="speed-switch" role="radiogroup" aria-label="Video speed">
+      <span aria-hidden="true">🐢</span>
+      {SPEEDS.map((v) => (
+        <button key={v} type="button" role="radio" aria-checked={speed === v} className={speed === v ? "on" : ""} onClick={() => setSpeed(v)}>
+          {v}×
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Looping, muted reference clip of one sign (PopSign ASL v1.0, CC BY 4.0), at the chosen speed.
+// controls: the speed switch and mirror (so the signer's hand is on the same side as the
+// learner's in the mirrored camera view).
 export function SignVideo({ signId, className = "", controls = false }) {
-  const [slow, setSlow] = usePreference("video-slow", false);
+  const [speed, setSpeed] = useVideoSpeed();
   const [mirror, setMirror] = usePreference("video-mirror", false);
   const ref = useRef(null);
   useEffect(() => {
-    if (ref.current) ref.current.playbackRate = slow ? 0.5 : 1;
-  }, [slow, signId]);
+    if (ref.current) ref.current.playbackRate = speed;
+  }, [speed, signId]);
   const video = (
     <video ref={ref} className={`sign-video ${mirror ? "mirrored" : ""} ${className}`} src={referenceVideo(signId)}
       autoPlay loop muted playsInline preload="metadata"
-      onLoadedData={(e) => { e.currentTarget.playbackRate = slow ? 0.5 : 1; }} />
+      onLoadedData={(e) => { e.currentTarget.playbackRate = speed; }} />
   );
   if (!controls) return video;
   return (
     <div className="video-with-controls">
       {video}
       <div className="video-controls">
-        <button type="button" className={`chip ${slow ? "on" : ""}`} aria-pressed={slow} onClick={() => setSlow(!slow)}>
-          🐢 Slow
-        </button>
+        <SpeedSwitch speed={speed} setSpeed={setSpeed} />
         <button type="button" className={`chip ${mirror ? "on" : ""}`} aria-pressed={mirror} onClick={() => setMirror(!mirror)}>
           ⇆ Mirror
         </button>
@@ -64,6 +84,11 @@ export function SignVideo({ signId, className = "", controls = false }) {
 export function PhraseVideo({ signs, labels, current = null }) {
   const [mode, setMode] = usePreference("phrase-video", "next");
   const [cycle, setCycle] = useState(0);
+  const [speed, setSpeed] = useVideoSpeed();
+  const videoRef = useRef(null);
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.playbackRate = speed;
+  }, [speed]);
   const focused = mode === "next" && current !== null && current < signs.length;
   const i = focused ? current : cycle;
   return (
@@ -77,8 +102,10 @@ export function PhraseVideo({ signs, labels, current = null }) {
         </button>
       </div>
       {focused && <span className="phrase-next">Next: {labels[i]}</span>}
-      <video key={`${signs[i]}-${i}-${focused}`} src={referenceVideo(signs[i])} autoPlay muted playsInline loop={focused}
+      <video ref={videoRef} key={`${signs[i]}-${i}-${focused}`} src={referenceVideo(signs[i])} autoPlay muted playsInline loop={focused}
+        onLoadedData={(e) => { e.currentTarget.playbackRate = speed; }}
         onEnded={focused ? undefined : () => setCycle((cycle + 1) % signs.length)} />
+      <div className="video-controls"><SpeedSwitch speed={speed} setSpeed={setSpeed} /></div>
       <figcaption>
         <span className="phrase-gloss">
           {signs.map((s, k) => <span key={k} className={k === i ? "current" : ""}>{labels[k]}</span>)}

@@ -2,15 +2,21 @@
 // saves each new attempt (updating mastery). Shared by all screens through App.jsx.
 // Also holds the UAT session (lib/uat.js): while one is active, attempts are tagged with the
 // participant code and logPage() records each screen visited.
+// Finished lessons (and phrases) are kept in a small log (settings "lessons"), for lesson stars,
+// bonus XP and badges.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getAllAttempts, getAllSignProgress, getSetting, logEvent, recordAttempt, resetProgress, setSetting } from "../lib/db.js";
 import { gameStats } from "../lib/gamify.js";
+import { isSigned } from "../lib/review.js";
 
 export function useProgress() {
   const [records, setRecords] = useState({}); // { signId: record }
   const [attempts, setAttempts] = useState([]); // every saved attempt (for XP and streak)
   const [unlockAll, setUnlockAllState] = useState(false);
   const [skipped, setSkipped] = useState([]); // units / phrases skipped ahead to (progress.js skipKey)
+  const [lessons, setLessons] = useState([]); // finished lessons and phrases [{ key, at, stars, perfect, accuracy }]
+  const lessonsRef = useRef([]);
+  lessonsRef.current = lessons;
   const [uatSession, setUatSessionState] = useState(null); // { participantId, startedAt } | null
   const [lastUatSession, setLastUatSession] = useState(null); // the most recent ended session
   const [loaded, setLoaded] = useState(false);
@@ -20,8 +26,8 @@ export function useProgress() {
   skippedRef.current = skipped;
 
   useEffect(() => {
-    Promise.all([getAllSignProgress(), getSetting("unlockAll", false), getSetting("uatSession", null), getSetting("uatLast", null), getAllAttempts(), getSetting("skipped", [])])
-      .then(([r, u, s, last, a, sk]) => { setRecords(r); setUnlockAllState(u); setUatSessionState(s); setLastUatSession(last); setAttempts(a); setSkipped(sk); })
+    Promise.all([getAllSignProgress(), getSetting("unlockAll", false), getSetting("uatSession", null), getSetting("uatLast", null), getAllAttempts(), getSetting("skipped", []), getSetting("lessons", [])])
+      .then(([r, u, s, last, a, sk, l]) => { setRecords(r); setUnlockAllState(u); setUatSessionState(s); setLastUatSession(last); setAttempts(a); setSkipped(sk); setLessons(l); })
       .catch(() => {}) // storage unavailable (e.g. private mode): the app still works, unsaved
       .finally(() => setLoaded(true));
   }, []);
@@ -31,7 +37,8 @@ export function useProgress() {
     try {
       const participantId = sessionRef.current?.participantId;
       const result = await recordAttempt(participantId ? { ...attempt, participantId } : attempt);
-      setRecords((prev) => ({ ...prev, [attempt.signId]: result.record }));
+      // (a multiple-choice answer leaves the sign's record as it was)
+      if (isSigned(attempt)) setRecords((prev) => ({ ...prev, [attempt.signId]: result.record }));
       setAttempts((prev) => [...prev, { ...attempt, timestamp: Date.now() }]);
       return result;
     } catch {
@@ -55,12 +62,24 @@ export function useProgress() {
     if (session) await logEvent({ participantId: session.participantId, type: "skip", page: key }).catch(() => {});
   }, []);
 
+  // a lesson or phrase was finished: { key, stars?, perfect, accuracy? }; logged in UAT mode
+  const completeLesson = useCallback(async (entry) => {
+    const next = [...lessonsRef.current, { ...entry, at: Date.now() }];
+    lessonsRef.current = next;
+    setLessons(next);
+    await setSetting("lessons", next).catch(() => {});
+    const session = sessionRef.current;
+    if (session) await logEvent({ participantId: session.participantId, type: "lesson-done", page: entry.key }).catch(() => {});
+  }, []);
+
   const clearProgress = async () => {
     await resetProgress().catch(() => {});
     await setSetting("skipped", []).catch(() => {});
+    await setSetting("lessons", []).catch(() => {});
     setRecords({});
     setAttempts([]);
     setSkipped([]);
+    setLessons([]);
   };
 
   const reset = useCallback(clearProgress, []);
@@ -99,10 +118,10 @@ export function useProgress() {
     if (session) logEvent({ participantId: session.participantId, type, page }).catch(() => {});
   }, []);
 
-  const game = useMemo(() => gameStats(attempts, records), [attempts, records]);
+  const game = useMemo(() => gameStats(attempts, records, Date.now(), lessons), [attempts, records, lessons]);
 
   return {
-    records, attempts, game, unlockAll, skipped, skip, loaded, record, setUnlockAll, reset,
+    records, attempts, game, lessons, completeLesson, unlockAll, skipped, skip, loaded, record, setUnlockAll, reset,
     uatSession, lastUatSession, startUatSession, endUatSession, logPage, logAction,
   };
 }
