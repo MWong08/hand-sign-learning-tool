@@ -3,6 +3,8 @@
 // (Chosen on validation phrases: lower word error rate than the decoder or the pause segmenter
 // alone, DEVLOG 2026-11-11.)
 // Unsure guesses are shown as "?" rather than a wrong word.
+// The camera only turns on when the learner presses "Start free signing" (and off again with
+// "Turn camera off"); once on, signs are recognised straight away, with Pause to stop.
 import { useRef, useState } from "react";
 import CameraView from "../components/CameraView.jsx";
 import { useSignPipeline } from "../hooks/useSignPipeline.js";
@@ -13,6 +15,30 @@ import { labelOf } from "../lib/vocabulary.js";
 const MIN_CONFIDENCE = 0.4; // below this the guess is shown as "?"
 
 export default function FreeSigning({ vocab, progress }) {
+  const [on, setOn] = useState(false);
+  const total = vocab.units.reduce((n, u) => n + u.signs.length, 0);
+  const turn = (value) => {
+    setOn(value);
+    progress.logAction(value ? "camera-on" : "camera-off", "free");
+  };
+  return (
+    <section>
+      <h1>Free signing</h1>
+      <p className="muted">
+        Sign any of the curriculum's {total} words, in any order. Go straight from one sign to the next, or pause between them.
+      </p>
+      {on ? <FreeSigningSession vocab={vocab} progress={progress} onStop={() => turn(false)} /> : (
+        <div className="card free-intro">
+          <span className="free-intro-icon" aria-hidden="true">📷</span>
+          <p>Your camera stays off until you start. Nothing is recorded or uploaded: signs are recognised on this device.</p>
+          <button type="button" className="button primary start-free" onClick={() => turn(true)}>▶ Start free signing</button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function FreeSigningSession({ vocab, progress, onStop }) {
   const trackerRef = useRef(null);
   const [words, setWords] = useState([]);
   const [signing, setSigning] = useState(false);
@@ -27,7 +53,7 @@ export default function FreeSigning({ vocab, progress }) {
     if (!found) return;
     const guess = recogniseSign(found.frames, size, classifier); // { sign, prob }
     if (guess) setWords((w) => [...w, guess]);
-  }, { log: (type) => progress.logAction(type, "free") });
+  }, { autoStart: true, log: (type) => progress.logAction(type, "free") });
 
   const restart = () => {
     trackerRef.current = null;
@@ -36,12 +62,7 @@ export default function FreeSigning({ vocab, progress }) {
   };
 
   return (
-    <section>
-      <h1>Free signing</h1>
-      <p className="muted">
-        Sign any of the curriculum's {vocab.units.reduce((n, u) => n + u.signs.length, 0)} words, in any order. Go straight
-        from one sign to the next, or pause between them.
-      </p>
+    <>
       <div className="practice-grid">
         <div>
           <CameraView {...pipeline} onRestart={words.length > 0 ? restart : undefined} restartLabel="Clear and restart" />
@@ -63,8 +84,9 @@ export default function FreeSigning({ vocab, progress }) {
               </span>
             ))}
           </p>
+          <button type="button" className="button small" onClick={onStop}>■ Turn camera off</button>
         </div>
       </div>
-    </section>
+    </>
   );
 }

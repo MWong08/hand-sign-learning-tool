@@ -49,6 +49,10 @@ async function createWith(delegate) {
 export function detectFrame(landmarkers, video, timestampMs) {
   const { hands, pose } = landmarkers;
   const frame = { hands: [null, null], pose: null };
+  // VIDEO mode needs strictly increasing timestamps; the landmarkers are shared by every screen
+  // (useSignPipeline), so never reuse or go back on one
+  timestampMs = Math.max(timestampMs, (landmarkers.lastTimestamp ?? -1) + 1);
+  landmarkers.lastTimestamp = timestampMs;
 
   const h = hands.detectForVideo(video, timestampMs);
   h.landmarks.forEach((points, i) => {

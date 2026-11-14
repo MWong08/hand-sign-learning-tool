@@ -1,9 +1,11 @@
 // Home: the curriculum as a learning path (IR FR4). Each unit is a coloured banner followed by
-// a winding trail of round LESSON buttons (2-4 signs each, lib/lesson.js) and a unit review;
-// units unlock in order as the previous one is mastered. The next lesson is marked "Start".
-// Locked units show only their banner (with the signs they hold), so the path stays short
-// (supervisor meeting 2: the main page needed too much scrolling with one button per sign).
-// Beside the path: weak-sign review, phrases, quiz and free signing.
+// a trail of round buttons, one per sign, then the unit review; units unlock in order as the
+// previous one is mastered. Signs are taught in lessons of 2-4 (lib/lesson.js): a sign's button
+// opens its lesson, the first sign of each lesson is marked "Lesson N" (with its stars), and the
+// next lesson is marked "Start". Supervisor meeting 2 found the path too long; the follow-up
+// sketch asked to keep every sign but zigzag them left and right, closer together (each button
+// beside the last one rather than below it), with a line joining them (App.css .trail.zigzag).
+// Beside the path: weak-sign review, phrases, quiz, free signing and text to sign.
 import { useSkipAhead } from "../components/SkipDialog.jsx";
 import { bestStars, lessonsOf, unitReviewKey } from "../lib/lesson.js";
 import { isPhraseUnlocked, isUnitUnlocked, unitStatus } from "../lib/progress.js";
@@ -11,7 +13,11 @@ import { weakSigns } from "../lib/review.js";
 import { labelOf } from "../lib/vocabulary.js";
 
 export const UNIT_COLORS = ["#22a35a", "#1d8fe0", "#9b51e0", "#e8590c", "#d6336c", "#0ca678", "#f59f00", "#5c7cfa"];
-const SWING = [0, 1.2, 0, -1.2]; // trail offsets, in steps of 36 px
+
+// lesson stars, e.g. ★★☆
+function Stars({ n }) {
+  return <span className="node-stars">{"★".repeat(n)}<span className="off">{"★".repeat(3 - n)}</span></span>;
+}
 
 // a link on the path; when locked, a button that offers to skip ahead (SkipDialog.jsx)
 function PathLink({ open, href, onLocked, label, lockedLabel, className, children }) {
@@ -66,48 +72,48 @@ export default function Home({ vocab, progress }) {
                 <span>
                   <span className="unit-number">Unit {u + 1}</span>
                   <span className="unit-name">{unit.title}</span>
-                  {!open && <span className="unit-signs">{unit.signs.map((sg) => sg.label).join(" · ")}</span>}
                 </span>
                 <span className="unit-banner-side">
                   {status.complete ? "🏆" : open ? `${status.mastered}/${status.total}` : "🔒 Skip ahead"}
                 </span>
               </PathLink>
-              {/* locked units show their banner only, which keeps the path short */}
-              {open && (
-                <ol className="trail">
-                  {lessons.map((l, i) => {
-                    const done = stars[l.key] ?? 0;
-                    const state = allMastered(l.signs) ? "mastered" : i === next ? "current" : done ? "done" : "open";
-                    const swing = SWING[i % SWING.length];
-                    return (
-                      <li key={l.key} style={{ "--swing": swing }} className={swing > 0 ? "label-left" : ""}>
-                        <a className={`node ${state}`} href={`#/lesson/${u}/${i}`}
-                          aria-label={`Lesson ${i + 1}: ${l.signs.map((id) => labelOf(vocab, id)).join(", ")}${done ? `, ${done} of 3 stars` : ""}`}>
-                          {i === next && <span className="node-start">Start</span>}
-                          <span className="node-face" aria-hidden="true">{state === "mastered" ? "★" : done ? "✓" : "✋"}</span>
-                        </a>
-                        <span className="node-label" aria-hidden="true">
-                          <strong>Lesson {i + 1}</strong>
-                          <span>{l.signs.map((id) => labelOf(vocab, id)).join(" · ")}</span>
-                          {done > 0 && <span className="node-stars">{"★".repeat(done)}<span className="off">{"★".repeat(3 - done)}</span></span>}
-                        </span>
-                      </li>
-                    );
-                  })}
-                  <li style={{ "--swing": SWING[lessons.length % SWING.length] }} className={SWING[lessons.length % SWING.length] > 0 ? "label-left" : ""}>
-                    <a className={`node review ${status.complete ? "mastered" : next === lessons.length ? "current" : "open"}`} href={`#/lesson/${u}/review`}
-                      aria-label={`Unit ${u + 1} review: every sign of the unit, mixed`}>
-                      {next === lessons.length && <span className="node-start">Start</span>}
-                      <span className="node-face" aria-hidden="true">🏆</span>
-                    </a>
-                    <span className="node-label" aria-hidden="true">
-                      <strong>Unit review</strong>
-                      <span>All {unit.signs.length} signs, mixed</span>
-                      {stars[unitReviewKey(unit)] > 0 && <span className="node-stars">{"★".repeat(stars[unitReviewKey(unit)])}<span className="off">{"★".repeat(3 - stars[unitReviewKey(unit)])}</span></span>}
-                    </span>
-                  </li>
-                </ol>
-              )}
+              {/* every sign is a step on the path, zigzagging left and right (supervisor's sketch) */}
+              <ol className="trail zigzag">
+                {lessons.flatMap((l, i) => l.signs.map((id, k) => {
+                  const done = stars[l.key] ?? 0;
+                  const mastered = Boolean(records[id]?.mastered);
+                  const first = k === 0;
+                  const isNext = open && i === next && first;
+                  const state = !open ? "locked" : mastered ? "mastered" : i === next ? "current" : done ? "done" : "open";
+                  const label = labelOf(vocab, id);
+                  return (
+                    <li key={id}>
+                      <PathLink className={`node ${state}`} open={open} href={`#/lesson/${u}/${i}`} onLocked={() => skipper.askUnit(u)}
+                        label={`${label}: lesson ${i + 1}${mastered ? ", mastered" : ""}${done ? `, ${done} of 3 stars` : ""}`}
+                        lockedLabel={`${label}: locked. Skip ahead to Unit ${u + 1}?`}>
+                        {isNext && <span className="node-start">Start</span>}
+                        <span className="node-face" aria-hidden="true">{state === "locked" ? "🔒" : mastered ? "★" : done ? "✓" : "✋"}</span>
+                      </PathLink>
+                      <span className="node-label" aria-hidden="true">
+                        {first && <span className="node-kicker">Lesson {i + 1}{done > 0 && <> <Stars n={done} /></>}</span>}
+                        <strong>{label}</strong>
+                      </span>
+                    </li>
+                  );
+                }))}
+                <li>
+                  <PathLink className={`node review ${!open ? "locked" : status.complete ? "mastered" : next === lessons.length ? "current" : "open"}`}
+                    open={open} href={`#/lesson/${u}/review`} onLocked={() => skipper.askUnit(u)}
+                    label={`Unit ${u + 1} review: every sign of the unit, mixed`} lockedLabel={`Unit ${u + 1} review: locked. Skip ahead?`}>
+                    {open && next === lessons.length && <span className="node-start">Start</span>}
+                    <span className="node-face" aria-hidden="true">🏆</span>
+                  </PathLink>
+                  <span className="node-label" aria-hidden="true">
+                    <span className="node-kicker">Unit review{stars[unitReviewKey(unit)] > 0 && <> <Stars n={stars[unitReviewKey(unit)]} /></>}</span>
+                    <strong>All {unit.signs.length} signs</strong>
+                  </span>
+                </li>
+              </ol>
               {/* the hint only under the first locked unit: the later banners already say "Skip ahead" */}
               {!open && u === firstLocked && (
                 <p className="unit-hint">
@@ -142,6 +148,11 @@ export default function Home({ vocab, progress }) {
           <span className="mode-icon" aria-hidden="true">✋</span>
           <span className="mode-name">Free signing</span>
           <span className="mode-desc">Sign any words in any order and watch them appear.</span>
+        </a>
+        <a className="mode-tile translate" href="#/translate">
+          <span className="mode-icon" aria-hidden="true">🔤</span>
+          <span className="mode-name">Text to sign</span>
+          <span className="mode-desc">Type or drag words into a sentence and watch it signed.</span>
         </a>
       </div>
       </div>

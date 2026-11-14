@@ -1,5 +1,5 @@
 // App shell: loads the vocabulary and the learner's progress, then shows the screen named in
-// the URL hash (#/unit/2, #/lesson/2/0, #/practice/2/3, #/phrase/1, #/review, ...).
+// the URL hash (#/unit/2, #/lesson/2/0, #/practice/2/3, #/phrase/1, #/review, #/translate, ...).
 import { useEffect, useState } from "react";
 import { useHashRoute } from "./hooks/useHashRoute.js";
 import { useProgress } from "./hooks/useProgress.js";
@@ -15,6 +15,7 @@ import Practice from "./pages/Practice.jsx";
 import ProgressPage from "./pages/ProgressPage.jsx";
 import Quiz from "./pages/Quiz.jsx";
 import Settings from "./pages/Settings.jsx";
+import TextToSign from "./pages/TextToSign.jsx";
 import UnitPage from "./pages/UnitPage.jsx";
 import "./App.css";
 
@@ -66,6 +67,9 @@ export default function App() {
       break;
     case "free":
       page = <FreeSigning vocab={vocab} progress={progress} />;
+      break;
+    case "translate":
+      page = <TextToSign vocab={vocab} progress={progress} />;
       break;
     case "quiz":
       page = <Quiz key={route.params.join("/")} vocab={vocab} progress={progress} />;
@@ -122,6 +126,7 @@ const TABS = [
   { route: "home", href: "#/", icon: "🏠", label: "Learn", also: ["unit"] },
   { route: "phrases", href: "#/phrases", icon: "💬", label: "Phrases", also: [] },
   { route: "free", href: "#/free", icon: "✋", label: "Free sign", also: [] },
+  { route: "translate", href: "#/translate", icon: "🔤", label: "Text to sign", also: [] },
   { route: "progress", href: "#/progress", icon: "📊", label: "Progress", also: [] },
   { route: "settings", href: "#/settings", icon: "⚙️", label: "More", also: ["help", "live"] },
 ];

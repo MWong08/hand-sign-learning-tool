@@ -175,6 +175,7 @@ function LessonRunner({ vocab, progress, plan, target }) {
     }
   }, {
     capture: true, // pictures for the side-by-side replay (memory only)
+    idle: () => !CAMERA_TYPES.has(stateRef.current.ex?.type), // no tracking during multiple choice
     onStart: () => { recorderRef.current.reset(); setPhase("waiting"); },
     log: (type) => progress.logAction(type, page),
   });

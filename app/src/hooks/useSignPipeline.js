@@ -9,9 +9,14 @@
 // are only detected, after they press Start. `detecting`, `start()` and `pause()` drive the
 // controls in CameraView. options: { autoStart: detect straight away (developer view),
 // onStart: called on every start, e.g. to drop a half-recorded attempt, log(type): UAT logging,
-// capture: also give each detected frame a small picture of the camera (frame.snap, a promise of
-// a JPEG Blob) for the side-by-side replay in lessons. The pictures only live in memory, on the
-// page that asked for them; they are never saved or uploaded }.
+// capture: also give each detected frame that shows a hand a small picture of the camera
+// (frame.snap, a promise of a JPEG Blob) for the side-by-side replay in lessons. The pictures only
+// live in memory, on the page that asked for them; they are never saved or uploaded,
+// idle(): while it returns true the camera keeps showing but no tracking is done, e.g. during a
+// lesson's multiple-choice questions, which saves the processor's time }.
+//
+// Speed: the hand tracker and the sign model are loaded once and shared by every screen
+// (sharedModels), so opening the next camera screen doesn't load and compile them again.
 import { useEffect, useRef, useState } from "react";
 import { createClassifier } from "../lib/classifier.js";
 import { createFramingMonitor, measureLuma } from "../lib/framing.js";
@@ -22,6 +27,18 @@ export const FPS = 15; // same rate as the training data (every 2nd frame of 30 
 // Moving on to the next sign in a lesson opens a new screen. If the learner was already
 // detecting, it carries on there, so Start isn't needed for every sign.
 let carryOn = false;
+
+// MediaPipe landmarkers + TF.js classifier, loaded on first use and kept for the whole visit.
+// (Before, each camera screen loaded its own copies, ~1.7 s per screen, and never freed the old
+// ones.) A failed load is forgotten, so the next screen tries again.
+let sharedModels = null;
+function loadModels() {
+  sharedModels ??= Promise.all([createLandmarkers(), createClassifier()]).catch((err) => {
+    sharedModels = null;
+    throw err;
+  });
+  return sharedModels;
+}
 export function keepDetectingOnNextScreen() {
   carryOn = true;
 }
@@ -66,10 +83,11 @@ export function useSignPipeline(onFrame, options = {}) {
     const lumaCanvas = document.createElement("canvas");
     const snapCanvas = document.createElement("canvas");
     let shown = "pending";
+    let wasIdle = false;
 
     async function start() {
       try {
-        const [landmarkers, clf] = await Promise.all([createLandmarkers(), createClassifier()]);
+        const [landmarkers, clf] = await loadModels();
         stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: "user" } });
         if (stopped) {
           // unmounted while loading (React dev mode mounts twice)
@@ -90,6 +108,13 @@ export function useSignPipeline(onFrame, options = {}) {
           // which would cut the rate from 15 to ~13 fps
           if (video.readyState >= 2 && now - lastFrameTime >= 1000 / FPS - 4) {
             lastFrameTime = now;
+            if (optionsRef.current.idle?.()) {
+              if (!wasIdle) canvasRef.current?.getContext("2d").clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+              wasIdle = true;
+              requestAnimationFrame(loop);
+              return;
+            }
+            wasIdle = false;
             const t0 = performance.now();
             const frame = detectFrame(landmarkers, video, Math.round(now));
             if (++frameCount % 15 === 0) setLandmarksMs(performance.now() - t0);
@@ -104,9 +129,10 @@ export function useSignPipeline(onFrame, options = {}) {
               setFraming({ ready: check.ready, ok: check.ok, issue: check.issue });
             }
             if (detectingRef.current) {
-              if (optionsRef.current.capture) frame.snap = snapshot(video, snapCanvas);
+              if (optionsRef.current.capture && frame.hands.some(Boolean)) frame.snap = snapshot(video, snapCanvas);
               onFrameRef.current?.(frame, size, clf, check);
             }
+            if (import.meta.env.DEV) window.__pipelineBusy = (window.__pipelineBusy ?? 0) + performance.now() - t0; // dev-only: time spent per frame
           }
           requestAnimationFrame(loop);
         };
@@ -145,8 +171,10 @@ function snapshot(video, canvas) {
 // the features use (blue: nose and shoulders).
 function drawOverlay(canvas, video, frame) {
   if (!canvas) return;
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+    canvas.width = video.videoWidth; // resizing reallocates the canvas, so only when it changes
+    canvas.height = video.videoHeight;
+  }
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const dot = ([x, y], color, r) => {

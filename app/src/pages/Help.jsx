@@ -51,6 +51,14 @@ export default function Help() {
         After a phrase you also get feedback on its <strong>flow</strong>: whether you joined the signs smoothly or
         stopped between them.
       </p>
+      <p>
+        In <strong>Free signing</strong> the camera stays off until you press <strong>Start free signing</strong>; sign
+        any words and they appear as they're recognised.
+      </p>
+      <p>
+        <strong>Text to sign</strong> works the other way round: type a sentence, or drag words from the word bank (tap
+        them on a phone), and the app plays the signs one after another. Only the app's words have videos.
+      </p>
 
       <h3>5. Quiz</h3>
       <p>Sign words from memory. The reference video is shown only after you answer.</p>

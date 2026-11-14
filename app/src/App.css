@@ -653,3 +653,81 @@ html { scroll-padding-bottom: 96px; }
 @media (max-width: 767px) {
   .practice-grid .reference .sign-video, .practice-grid .reference video { max-height: 34vh; }
 }
+
+/* ================================================================ zigzag path (supervisor's sketch)
+   One button per sign, alternating between a left and a right column, each one only a little
+   lower than the last, joined by a line. --dx: distance of each column from the middle,
+   --step: vertical distance from one button to the next. The joining line runs from a button's
+   centre to the next one's, under both buttons. */
+.trail.zigzag { --dx: 64px; --step: 74px; gap: 0; padding: 22px 0 8px; }
+.trail.zigzag li { height: var(--step); align-content: start; transform: translateX(calc(var(--dx) * -1)); }
+.trail.zigzag li:nth-child(even) { transform: translateX(var(--dx)); }
+.trail.zigzag li:has(.node.current) { margin-top: 0; }
+.trail.zigzag li:not(:last-child)::before {
+  content: ""; position: absolute; z-index: -1; left: 50%; top: 32px; height: 8px; margin-top: -4px; border-radius: 4px;
+  width: hypot(calc(var(--dx) * 2), var(--step)); transform-origin: 0 50%;
+  transform: rotate(atan2(var(--step), calc(var(--dx) * 2)));
+  background: color-mix(in srgb, var(--unit) 35%, var(--border));
+}
+.trail.zigzag li:nth-child(even):not(:last-child)::before { transform: rotate(atan2(var(--step), calc(var(--dx) * -2))); }
+.path-unit.locked .trail.zigzag li::before { background: var(--locked); }
+/* labels on the outer side of each column */
+.trail.zigzag .node-label { left: auto; right: calc(50% + 44px); text-align: right; top: 32px; max-width: 150px; }
+.trail.zigzag li:nth-child(even) .node-label { right: auto; left: calc(50% + 44px); text-align: left; }
+.node-kicker { font-size: 0.72rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; color: var(--unit); white-space: nowrap; }
+.path-unit.locked .node-kicker { color: var(--muted); }
+.node-kicker .node-stars { font-size: 0.8rem; letter-spacing: 0; }
+.node.locked .node-face { font-size: 1.3rem; }
+@media (max-width: 420px) {
+  .trail.zigzag { --dx: 50px; }
+  .trail.zigzag .node-label { max-width: 96px; font-size: 0.78rem; }
+}
+.trail.zigzag:has(li:first-child .node-start) { padding-top: 50px; }
+.free-intro { display: grid; justify-items: center; text-align: center; gap: 10px; padding: 28px 20px; max-width: 560px; margin: 8px auto 0; }
+.free-intro p { margin: 0; color: var(--muted); }
+.free-intro-icon { font-size: 2.6rem; }
+.transcript-card .button.small { justify-self: start; margin-top: 8px; }
+
+/* six tabs on a phone: share the width, labels may wrap */
+@media (max-width: 959px) {
+  .tab { flex: 1 1 0; min-width: 0; padding: 6px 2px; text-align: center; font-size: 0.62rem; letter-spacing: 0.01em; }
+}
+
+/* ================================================================ text to sign */
+.mode-tile.translate .mode-icon { background: color-mix(in srgb, var(--blue) 16%, var(--surface)); }
+.tts-form { display: flex; gap: 8px; flex-wrap: wrap; }
+.tts-form input { flex: 1 1 220px; min-width: 0; font: inherit; font-size: 1.05rem; padding: 10px 14px; border-radius: 12px; border: 2px solid var(--border); background: var(--surface); color: var(--text); }
+.tts-examples { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0; }
+.tts-notes { margin: 0 0 10px; }
+.tts-main { display: grid; gap: 16px; align-items: start; }
+.tts-left { display: grid; gap: 10px; min-width: 0; }
+.tts-sentence {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 64px; padding: 12px;
+  border: 2px dashed var(--border-strong); border-radius: var(--radius); background: var(--sunken);
+}
+.tts-sentence.over, .tts-bank.over { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 10%, var(--surface)); }
+.tts-word {
+  display: inline-flex; align-items: center; border-radius: 12px; background: var(--surface); border: 2px solid var(--border);
+  border-bottom-width: 4px; cursor: grab; font-weight: 900;
+}
+.tts-word.current { border-color: var(--blue); color: var(--blue); }
+.tts-word button { border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
+.tts-word-play { padding: 6px 4px 6px 12px; }
+.tts-word-remove { padding: 6px 10px 6px 6px; color: var(--muted) !important; font-size: 1.1rem; line-height: 1; }
+.tts-clear { justify-self: start; }
+.tts-bank { display: grid; gap: 10px; }
+.tts-bank-head { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
+.tts-bank-head h2 { margin: 0; font-size: 1.1rem; }
+.tts-bank-head input { font: inherit; padding: 6px 10px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface); color: var(--text); width: 160px; }
+.tts-group h3 { margin: 0 0 6px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.tts-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tts-bank-word { cursor: grab; }
+.tts-player video { width: 100%; max-height: 360px; object-fit: contain; background: #0f172a; border-radius: 12px; display: block; }
+.tts-player video.mirrored { transform: scaleX(-1); }
+.tts-empty { display: grid; place-items: center; gap: 6px; aspect-ratio: 4 / 3; max-height: 360px; border-radius: 12px; background: var(--sunken); color: var(--muted); font-weight: 800; }
+.tts-empty span { font-size: 2.4rem; }
+@media (min-width: 900px) {
+  .tts-main { grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); }
+  .tts-player { position: sticky; top: 12px; grid-column: 2; grid-row: 1 / span 2; }
+  .tts-bank { grid-column: 1; }
+}
