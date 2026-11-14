@@ -66,6 +66,7 @@ export default function PhrasePractice({ vocab, phraseIndex, progress }) {
     resultsRef.current = [];
     setResults([]);
     setStuck(false);
+    pipeline.countdown();
     progress.logAction("restart", `phrase/${phraseIndex}`);
   };
 

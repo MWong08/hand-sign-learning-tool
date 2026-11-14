@@ -10,12 +10,13 @@ import CameraView from "../components/CameraView.jsx";
 import { useSignPipeline } from "../hooks/useSignPipeline.js";
 import { recogniseSign } from "../lib/judgeSign.js";
 import { createPhraseTracker } from "../lib/phraseTracker.js";
+import { getPref } from "../lib/prefs.js";
 import { labelOf } from "../lib/vocabulary.js";
 
 const MIN_CONFIDENCE = 0.4; // below this the guess is shown as "?"
 
 export default function FreeSigning({ vocab, progress }) {
-  const [on, setOn] = useState(false);
+  const [on, setOn] = useState(() => getPref("autoStart")); // the auto-start preference skips the Start screen
   const total = vocab.units.reduce((n, u) => n + u.signs.length, 0);
   const turn = (value) => {
     setOn(value);
@@ -58,6 +59,7 @@ function FreeSigningSession({ vocab, progress, onStop }) {
   const restart = () => {
     trackerRef.current = null;
     setWords([]);
+    pipeline.countdown();
     progress.logAction("restart", "free");
   };
 

@@ -1,7 +1,9 @@
 // Settings, user-testing (UAT) sessions, and credits.
 import { useEffect, useState } from "react";
 import { getAllAttempts, getAllEvents } from "../lib/db.js";
+import { usePreference } from "../components/ui.jsx";
 import { downloadText } from "../lib/download.js";
+import { DEFAULTS } from "../lib/prefs.js";
 import { normaliseParticipantId, sessionFileName, sessionSummary, sessionToCsv } from "../lib/uat.js";
 
 export default function Settings({ progress }) {
@@ -15,6 +17,8 @@ export default function Settings({ progress }) {
         <a className="mode-tile" href="#/quiz"><span className="mode-icon" aria-hidden="true">🎯</span><span className="mode-name">Quiz</span>
           <span className="mode-desc">Sign words from memory.</span></a>
       </div>
+      <Preferences progress={progress} />
+
       <h2 className="section-title">Settings</h2>
 
       <label className="setting">
@@ -51,6 +55,65 @@ export default function Settings({ progress }) {
         CC BY 4.0, https://signdata.cc.gatech.edu. Hand and pose tracking: Google MediaPipe. Recognition: TensorFlow.js.
       </p>
     </section>
+  );
+}
+
+// Profile preferences (lib/prefs.js). Changes apply straight away, on every screen; in a UAT
+// session each change is logged (e.g. "pref:hand=left"), to see which ones testers used.
+function Preferences({ progress }) {
+  const pref = (key) => {
+    const [value, set] = usePreference(key, DEFAULTS[key]); // eslint-disable-line react-hooks/rules-of-hooks -- same keys every render
+    return [value, (v) => { set(v); progress.logAction(`pref:${key}=${v}`, "settings"); }];
+  };
+  const [hand, setHand] = pref("hand");
+  const [autoStart, setAutoStart] = pref("autoStart");
+  const [countdown, setCountdown] = pref("countdown");
+  const [theme, setTheme] = pref("theme");
+  const [textSize, setTextSize] = pref("textSize");
+  return (
+    <>
+      <h2 className="section-title">Your preferences</h2>
+      <div className="setting">
+        <span>
+          <strong>Dominant hand</strong>
+          <span className="muted">The hand you sign with. Left flips the demo videos and hand drawings so they use your hand. Recognition works with either.</span>
+        </span>
+        <Choice label="Dominant hand" value={hand} onChange={setHand} options={[["right", "✋ Right"], ["left", "🤚 Left"]]} />
+      </div>
+      <label className="setting">
+        <input type="checkbox" checked={autoStart} onChange={(e) => setAutoStart(e.target.checked)} />
+        <span>
+          <strong>Start the camera automatically</strong>
+          <span className="muted">Skip the Start button: signs are watched for as soon as the camera is on, and free signing opens with the camera on.</span>
+        </span>
+      </label>
+      <label className="setting">
+        <input type="checkbox" checked={countdown} onChange={(e) => setCountdown(e.target.checked)} />
+        <span>
+          <strong>Countdown before each attempt</strong>
+          <span className="muted">“3, 2, 1” before the app starts watching, so you have time to get ready.</span>
+        </span>
+      </label>
+      <div className="setting">
+        <span><strong>Theme</strong><span className="muted">“System” follows your device.</span></span>
+        <Choice label="Theme" value={theme} onChange={setTheme} options={[["system", "System"], ["light", "☀️ Light"], ["dark", "🌙 Dark"]]} />
+      </div>
+      <div className="setting">
+        <span><strong>Text size</strong><span className="muted">Makes all text bigger.</span></span>
+        <Choice label="Text size" value={textSize} onChange={setTextSize} options={[["normal", "A"], ["large", "A+"], ["larger", "A++"]]} />
+      </div>
+    </>
+  );
+}
+
+// a row of buttons, one of them on
+function Choice({ label, value, onChange, options }) {
+  return (
+    <div className="segmented" role="radiogroup" aria-label={label}>
+      {options.map(([v, text]) => (
+        <button key={v} type="button" role="radio" aria-checked={value === v} className={value === v ? "on" : ""} onClick={() => onChange(v)}>{text}</button>
+      ))}
+    </div>
   );
 }
 

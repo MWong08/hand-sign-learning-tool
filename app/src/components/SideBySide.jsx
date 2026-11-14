@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { describeIssue, FINGERS } from "../lib/diagnose.js";
 import { referenceVideo } from "../lib/vocabulary.js";
 import GhostHand, { BONES, fingerOf } from "./GhostHand.jsx";
-import { SpeedSwitch, usePreference, useVideoSpeed } from "./ui.jsx";
+import { SpeedSwitch, useMirror, useVideoSpeed } from "./ui.jsx";
 
 const COLORS = { hand: "#22c55e", flag: "#ef4444", path: "#ef4444" };
 const hasHand = (f) => f.hands[0] !== null || f.hands[1] !== null;
@@ -31,7 +31,7 @@ export default function SideBySide({ signId, label, frames, issues = [], templat
   const [playing, setPlaying] = useState(true);
   const [view, setView] = useState("replay");
   const [speed, setSpeed] = useVideoSpeed();
-  const [mirror] = usePreference("video-mirror", false);
+  const [mirror] = useMirror();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const flagged = useMemo(() => new Set(issues.map((i) => i.component)), [issues]);

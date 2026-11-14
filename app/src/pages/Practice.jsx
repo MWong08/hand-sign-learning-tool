@@ -54,6 +54,7 @@ export default function Practice({ vocab, unitIndex, signIndex, progress }) {
     recorderRef.current.reset();
     setResult(null);
     setPhase("waiting");
+    pipeline.countdown();
     progress.logAction("restart", here);
   };
 

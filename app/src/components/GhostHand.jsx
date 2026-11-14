@@ -6,8 +6,11 @@
 // the wrist (in hand sizes), the wrist relative to the shoulder midpoint and to the nose (in
 // shoulder widths). That is enough to redraw the hand, the shoulders and the face. The hand's
 // size relative to the shoulders is not stored, so it is drawn at a fixed typical scale.
-// Drawn mirrored, like the camera view, so it matches what the learner sees of themselves.
+// Drawn mirrored, like the camera view, so it matches what the learner sees of themselves. The
+// features always describe a right hand (preprocessing mirrors a left hand), so for a left-handed
+// learner (Settings) it is drawn unmirrored, which puts the hand on their side.
 import { useEffect, useRef } from "react";
+import { usePreference } from "./ui.jsx";
 import { FINGERS } from "../lib/diagnose.js";
 
 const HAND_SCALE = 0.42;  // drawn hand size (wrist to middle knuckle) in shoulder widths (a little larger than life, to read the shape)
@@ -36,8 +39,10 @@ function median(values) {
   return s[Math.floor(s.length / 2)];
 }
 
-export default function GhostHand({ template, attempt = null, issues = [], mirror = true, size = 260, label }) {
+export default function GhostHand({ template, attempt = null, issues = [], mirror: mirrorProp, size = 260, label }) {
   const canvasRef = useRef(null);
+  const [hand] = usePreference("hand", "right");
+  const mirror = mirrorProp ?? hand !== "left";
 
   useEffect(() => {
     const canvas = canvasRef.current;

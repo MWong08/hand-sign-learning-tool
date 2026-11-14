@@ -731,3 +731,12 @@ html { scroll-padding-bottom: 96px; }
   .tts-player { position: sticky; top: 12px; grid-column: 2; grid-row: 1 / span 2; }
   .tts-bank { grid-column: 1; }
 }
+
+/* ================================================================ profile preferences */
+div.setting { flex-wrap: wrap; }
+div.setting > span { flex: 1 1 260px; }
+.camera-countdown {
+  position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 4px; pointer-events: none;
+  border-radius: var(--radius); background: rgba(15, 23, 42, 0.3); color: #fff; font-weight: 900; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.camera-countdown span { font-size: 5rem; line-height: 1; animation: pop 0.5s cubic-bezier(0.3, 1.6, 0.6, 1) both; }

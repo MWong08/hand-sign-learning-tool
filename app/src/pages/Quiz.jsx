@@ -57,12 +57,14 @@ export default function Quiz({ vocab, progress }) {
 
   const next = () => {
     recorderRef.current.reset();
+    pipeline.countdown();
     go(i + 1, "asking");
   };
   const restart = () => {
     progress.logAction("restart", "quiz");
     recorderRef.current.reset();
     setSigning(false);
+    pipeline.countdown();
     setQuestions(buildQuiz(pool));
     setAnswers([]);
     go(0, "asking");

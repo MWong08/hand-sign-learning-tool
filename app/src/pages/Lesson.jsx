@@ -209,6 +209,12 @@ function LessonRunner({ vocab, progress, plan, target }) {
     if (pos + 1 >= queueRef.current.length) progress.logAction("lesson-end", page);
   };
 
+  // a new camera exercise: the 3-2-1 countdown, if the learner turned it on
+  const { countdown, detecting } = pipeline;
+  useEffect(() => {
+    if (pos > 0 && detecting && CAMERA_TYPES.has(queueRef.current[pos]?.type)) countdown();
+  }, [pos]); // eslint-disable-line react-hooks/exhaustive-deps -- only when the exercise changes
+
   const answerPick = (option) => {
     if (entriesRef.current[pos]?.tries.length) return;
     const verdict = option === ex.signId ? "correct" : "incorrect";
@@ -219,6 +225,7 @@ function LessonRunner({ vocab, progress, plan, target }) {
 
   const retryPhrase = () => {
     resetSigning();
+    pipeline.countdown();
     progress.logAction("restart", page);
   };
 

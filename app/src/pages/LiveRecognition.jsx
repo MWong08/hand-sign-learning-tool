@@ -25,7 +25,7 @@ export default function LiveRecognition({ vocab }) {
     const t0 = performance.now();
     setPredictions(classifier.predict(features).slice(0, 3));
     setModelMs(performance.now() - t0);
-  }, { autoStart: true });
+  }, { autoStart: true, noCountdown: true });
 
   return (
     <section>

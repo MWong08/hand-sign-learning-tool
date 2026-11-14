@@ -6,7 +6,7 @@
 //     where drag and drop isn't available). Words in the sentence can be dragged to reorder,
 //     dragged back to the bank (or ×) to remove, and tapped to play from there.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SpeedSwitch, usePreference, useVideoSpeed } from "../components/ui.jsx";
+import { SpeedSwitch, useMirror, usePreference, useVideoSpeed } from "../components/ui.jsx";
 import { buildLexicon, textToSigns } from "../lib/textToSign.js";
 import { labelOf, referenceVideo } from "../lib/vocabulary.js";
 
@@ -191,7 +191,7 @@ function useSentencePlayer(sentence) {
 
 function SentencePlayer({ vocab, sentence, gloss, index, playing, loop, setLoop, ended, toggle }) {
   const [speed, setSpeed] = useVideoSpeed();
-  const [mirror, setMirror] = usePreference("video-mirror", false);
+  const [mirror, toggleMirror] = useMirror();
   const videoRef = useRef(null);
   const current = sentence[index];
   const following = sentence[index + 1] ?? (loop ? sentence[0] : null);
@@ -223,7 +223,7 @@ function SentencePlayer({ vocab, sentence, gloss, index, playing, loop, setLoop,
         <button type="button" className="button small" onClick={toggle} disabled={!current}>{playing ? "⏸ Pause" : "▶ Play"}</button>
         <button type="button" className={`chip ${loop ? "on" : ""}`} aria-pressed={loop} onClick={() => setLoop(!loop)}>🔁 Repeat</button>
         <SpeedSwitch speed={speed} setSpeed={setSpeed} />
-        <button type="button" className={`chip ${mirror ? "on" : ""}`} aria-pressed={mirror} onClick={() => setMirror(!mirror)}>⇆ Mirror</button>
+        <button type="button" className={`chip ${mirror ? "on" : ""}`} aria-pressed={mirror} onClick={toggleMirror}>⇆ Mirror</button>
       </div>
       <figcaption>
         {gloss && <span className="phrase-gloss">{sentence.map((w, k) => <span key={w.key} className={k === index ? "current" : ""}>{labelOf(vocab, w.signId)}</span>)}</span>}

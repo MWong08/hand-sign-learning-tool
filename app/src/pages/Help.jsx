@@ -60,6 +60,14 @@ export default function Help() {
         them on a phone), and the app plays the signs one after another. Only the app's words have videos.
       </p>
 
+      <h3>Your preferences</h3>
+      <p>
+        In <a href="#/settings">More</a> you can set your <strong>dominant hand</strong> (left flips the demo videos
+        so the signer uses the same hand as you), start the camera <strong>automatically</strong>, add a
+        <strong> 3-2-1 countdown</strong> before each attempt, and choose the <strong>theme</strong> and
+        <strong> text size</strong>.
+      </p>
+
       <h3>5. Quiz</h3>
       <p>Sign words from memory. The reference video is shown only after you answer.</p>
 

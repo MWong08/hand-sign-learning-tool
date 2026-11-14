@@ -1,5 +1,6 @@
 // Small shared UI pieces.
 import { useEffect, useRef, useState } from "react";
+import { getPref, onPrefChange, setPref } from "../lib/prefs.js";
 import { referenceVideo } from "../lib/vocabulary.js";
 
 export function ProgressBar({ value, total, label }) {
@@ -12,16 +13,20 @@ export function ProgressBar({ value, total, label }) {
   );
 }
 
-// Remembered per browser (a viewer convenience, so plain localStorage; it may be unavailable).
+// Remembered per browser (lib/prefs.js). A change made anywhere (e.g. in Settings) reaches every
+// screen showing the same preference.
 export function usePreference(key, initial) {
-  const [value, setValue] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(key)) ?? initial; } catch { return initial; }
-  });
-  const set = (v) => {
-    setValue(v);
-    try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* storage unavailable */ }
-  };
-  return [value, set];
+  const [value, setValue] = useState(() => getPref(key, initial));
+  useEffect(() => onPrefChange((k, v) => { if (k === key) setValue(v); }), [key]);
+  return [value, (v) => setPref(key, v)];
+}
+
+// Whether reference videos are shown flipped: the learner's Mirror switch, turned the other way
+// for left-handed learners (so the demo signer then signs with their left hand too).
+export function useMirror() {
+  const [mirror, setMirror] = usePreference("video-mirror", false);
+  const [hand] = usePreference("hand", "right");
+  return [mirror !== (hand === "left"), () => setMirror(!mirror)];
 }
 
 // Reference clips play slower than real time by default (supervisor meeting 2: "the demo video is
@@ -51,7 +56,7 @@ export function SpeedSwitch({ speed, setSpeed }) {
 // learner's in the mirrored camera view).
 export function SignVideo({ signId, className = "", controls = false }) {
   const [speed, setSpeed] = useVideoSpeed();
-  const [mirror, setMirror] = usePreference("video-mirror", false);
+  const [mirror, toggleMirror] = useMirror();
   const ref = useRef(null);
   useEffect(() => {
     if (ref.current) ref.current.playbackRate = speed;
@@ -67,7 +72,7 @@ export function SignVideo({ signId, className = "", controls = false }) {
       {video}
       <div className="video-controls">
         <SpeedSwitch speed={speed} setSpeed={setSpeed} />
-        <button type="button" className={`chip ${mirror ? "on" : ""}`} aria-pressed={mirror} onClick={() => setMirror(!mirror)}>
+        <button type="button" className={`chip ${mirror ? "on" : ""}`} aria-pressed={mirror} onClick={toggleMirror}>
           ⇆ Mirror
         </button>
       </div>

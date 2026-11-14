@@ -15,12 +15,18 @@
 // idle(): while it returns true the camera keeps showing but no tracking is done, e.g. during a
 // lesson's multiple-choice questions, which saves the processor's time }.
 //
+// Profile preferences (lib/prefs.js): "autoStart" skips the Start button (detection begins as
+// soon as the camera is ready); "countdown" shows 3-2-1 before each attempt: frames only reach the
+// page once it ends. A page calls countdown() when a new attempt begins (next sign, Try again);
+// Start and arriving on the next screen still detecting count too. noCountdown: never (developer view).
+//
 // Speed: the hand tracker and the sign model are loaded once and shared by every screen
 // (sharedModels), so opening the next camera screen doesn't load and compile them again.
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createClassifier } from "../lib/classifier.js";
 import { createFramingMonitor, measureLuma } from "../lib/framing.js";
 import { createLandmarkers, detectFrame } from "../lib/landmarks.js";
+import { getPref } from "../lib/prefs.js";
 
 export const FPS = 15; // same rate as the training data (every 2nd frame of 30 fps video)
 
@@ -51,9 +57,28 @@ export function useSignPipeline(onFrame, options = {}) {
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  const [detecting, setDetecting] = useState(() => Boolean(options.autoStart) || carryOn);
+  const [detecting, setDetecting] = useState(() => Boolean(options.autoStart) || carryOn || getPref("autoStart"));
   const detectingRef = useRef(detecting);
-  useEffect(() => { carryOn = false; }, []);
+
+  // 3-2-1 before an attempt (preference); count > 0 while it runs
+  const [count, setCount] = useState(0);
+  const countRef = useRef(0);
+  const timerRef = useRef(null);
+  const countdown = useCallback(() => {
+    if (!getPref("countdown") || optionsRef.current.noCountdown) return;
+    clearInterval(timerRef.current);
+    const tick = (n) => {
+      countRef.current = n;
+      setCount(n);
+      if (n === 0) clearInterval(timerRef.current);
+    };
+    tick(3);
+    timerRef.current = setInterval(() => tick(countRef.current - 1), 1000);
+  }, []);
+  useEffect(() => {
+    carryOn = false;
+    return () => clearInterval(timerRef.current);
+  }, []);
   const setDetectingBoth = (value) => {
     detectingRef.current = value;
     setDetecting(value);
@@ -61,6 +86,7 @@ export function useSignPipeline(onFrame, options = {}) {
   const start = () => {
     optionsRef.current.onStart?.();
     setDetectingBoth(true);
+    countdown();
     optionsRef.current.log?.("start");
   };
   const pause = () => {
@@ -73,6 +99,10 @@ export function useSignPipeline(onFrame, options = {}) {
   const [classifier, setClassifier] = useState(null);
   const [landmarksMs, setLandmarksMs] = useState(0);
   const [framing, setFraming] = useState({ ready: false, ok: true, issue: null });
+  // arrived already detecting (next sign, or auto-start): count down once the camera shows
+  useEffect(() => {
+    if (status === "ready" && detectingRef.current) countdown();
+  }, [status, countdown]);
 
   useEffect(() => {
     let stopped = false;
@@ -128,7 +158,7 @@ export function useSignPipeline(onFrame, options = {}) {
               shown = key;
               setFraming({ ready: check.ready, ok: check.ok, issue: check.issue });
             }
-            if (detectingRef.current) {
+            if (detectingRef.current && countRef.current === 0) {
               if (optionsRef.current.capture && frame.hands.some(Boolean)) frame.snap = snapshot(video, snapCanvas);
               onFrameRef.current?.(frame, size, clf, check);
             }
@@ -150,7 +180,7 @@ export function useSignPipeline(onFrame, options = {}) {
     };
   }, []);
 
-  return { videoRef, canvasRef, status, error, classifier, landmarksMs, framing, detecting, start, pause };
+  return { videoRef, canvasRef, status, error, classifier, landmarksMs, framing, detecting, start, pause, count, countdown };
 }
 
 // A small JPEG of the current camera picture (unmirrored, like the landmarks). toBlob copies the

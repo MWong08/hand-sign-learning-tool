@@ -5,7 +5,8 @@
 // Controls: before detection starts, a Start button sits over the picture (the learner can get
 // into position first, with the skeleton and set-up check already live). Once started, a row
 // below has Pause, and Restart when the page passes onRestart (restartLabel names what restarts).
-export default function CameraView({ videoRef, canvasRef, status, error, framing, detecting, start, pause, onRestart, restartLabel = "Restart" }) {
+// count: the 3-2-1 countdown before an attempt (a profile preference), shown over the picture.
+export default function CameraView({ videoRef, canvasRef, status, error, framing, detecting, start, pause, count = 0, onRestart, restartLabel = "Restart" }) {
   const ready = status === "ready";
   return (
     <div className="camera-block">
@@ -21,6 +22,12 @@ export default function CameraView({ videoRef, canvasRef, status, error, framing
           <div className="camera-start">
             <button type="button" className="button primary start-button" onClick={start}>▶ Start</button>
             <span>Get into position, then press Start.</span>
+          </div>
+        )}
+        {ready && detecting && count > 0 && (
+          <div className="camera-countdown" role="timer" aria-live="assertive">
+            <span key={count}>{count}</span>
+            Get ready…
           </div>
         )}
         {status === "loading" && <p className="camera-message">Starting camera and loading models…</p>}
